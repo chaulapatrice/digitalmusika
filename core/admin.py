@@ -1,11 +1,14 @@
+from typing import Any
 from django.contrib import admin
-from image_cropping import ImageCroppingMixin
+from django.http.request import HttpRequest
+from .forms import ProductForm, ProductRequestForm
 from .models import (
     Payment,
     Order,
     OrderItem,
     Product,
     Deal,
+    DealItem,
     Payment,
     ProductRequest
 )
@@ -16,7 +19,8 @@ from .models import (
 class PaymentModelAdmin(admin.ModelAdmin):
     list_display = (
         'id',
-        'paynow_id',
+        'order',
+        'customer',
         'amount',
         'status'
     )
@@ -37,7 +41,7 @@ class OrderModelAdmin(admin.ModelAdmin):
 
 
 @admin.register(Product)
-class ProductModelAdmin(ImageCroppingMixin, admin.ModelAdmin):
+class ProductModelAdmin(admin.ModelAdmin):
     list_display = (
         'name',
         'price',
@@ -45,10 +49,15 @@ class ProductModelAdmin(ImageCroppingMixin, admin.ModelAdmin):
         'created_at',
         'updated_at'
     )
+    form = ProductForm
 
 
 class ProductInline(admin.TabularInline):
     model = Product
+
+
+class DealItemInline(admin.TabularInline):
+    model = DealItem
 
 
 @admin.register(Deal)
@@ -58,11 +67,26 @@ class DealModelAdmin(admin.ModelAdmin):
         'status'
     )
 
+    inlines = [DealItemInline]
+
+    def has_delete_permission(self, request: HttpRequest, obj: Deal | None = None) -> bool:
+        if obj != None:
+            if obj.status in [Deal.ACCEPTED, Deal.SEALED, Deal.COMPLETED]:
+                return False
+        return super().has_change_permission(request, obj)
+
+    def get_readonly_fields(self, request: HttpRequest, obj: Deal | None = None) -> list[str] | tuple[str]:
+        if obj == None:
+            return ('status', 'assignee', 'customer')
+        else:
+            return super().get_readonly_fields(request, obj)
+
 
 @admin.register(ProductRequest)
-class ProductRequestModelAdmin(ImageCroppingMixin, admin.ModelAdmin):
+class ProductRequestModelAdmin(admin.ModelAdmin):
     list_display = (
         'name',
         'created_at',
         'updated_at'
     )
+    form = ProductRequestForm

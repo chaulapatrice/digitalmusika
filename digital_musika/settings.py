@@ -9,8 +9,6 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
-from easy_thumbnails.conf import Settings as thumbnail_settings
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -40,8 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'users',
     'core',
-    'easy_thumbnails',
-    'image_cropping'
+    'image_uploader_widget',
 ]
 
 MIDDLEWARE = [
@@ -113,6 +110,16 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 
 USE_I18N = True
+
+LANGUAGES = [
+    ('en', 'English'),
+    ('sn', 'Shona'),
+    # Add other languages as needed
+]
+
+LOCALE_PATHS = [
+    BASE_DIR / 'locale'
+]
 
 USE_L10N = True
 
@@ -312,7 +319,12 @@ JAZZMIN_UI_TWEAKS = {
     "show_ui_builder": True
 }
 
-# Django cropping
-THUMBNAIL_PROCESSORS = (
-    'image_cropping.thumbnail_processors.crop_corners',
-) + thumbnail_settings.THUMBNAIL_PROCESSORS
+TWILIIO_ACCOUNT_SID = 'AC83c3e53c113e584b7dbfe6a65e947e0c'
+TWILIO_AUTH_TOKEN = '4b116313eb8d91bfce44ab4aaa03066c'
+SITE_BASE_URL = 'http://localhost:8000'
+
+# Payments
+PAYNOW_INTEGRATION_ID = '11927'
+PAYNOW_INTEGRATION_KEY = '97f4b76f-0570-4ae0-b8e2-e7b8f5c6fe7f'
+# Time
+TIME_ZONE = 'Africa/Johannesburg'
