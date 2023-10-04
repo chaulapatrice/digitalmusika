@@ -25,9 +25,38 @@ class PaymentModelAdmin(admin.ModelAdmin):
         'status'
     )
 
+    readonly_fields = (
+        'paynow_redirect_url',
+        'paynow_poll_url',
+        'amount',
+        'status',
+        'delivered_at',
+        'awaiting_delivery_at',
+        'paid_at',
+        'paynow_created_at',
+        'sent_at',
+        'cancelled_at',
+        'disputed_at',
+        'refunded_at',
+        'customer',
+        'order'
+    )
+
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
+    readonly_fields = (
+        'quantity',
+        'product'
+    )
+
+    extra = 0
+
+    def has_delete_permission(self, request: HttpRequest, obj: OrderItem | None = None) -> bool:
+        return False
+
+    def has_add_permission(self, request: HttpRequest, obj: OrderItem | None = None) -> bool:
+        return False
 
 
 @admin.register(Order)
@@ -35,6 +64,18 @@ class OrderModelAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'status'
+    )
+
+    readonly_fields = (
+        'deal',
+        'pending_at',
+        'awaiting_delivery_at',
+        'delivered_at',
+        'ready_for_delivery_at',
+        'sent_out_at',
+        'cancelled_at',
+        'failed_at',
+        'customer'
     )
 
     inlines = (OrderItemInline,)
@@ -65,6 +106,12 @@ class DealModelAdmin(admin.ModelAdmin):
     list_display = (
         'title',
         'status'
+    )
+
+    readonly_fields = (
+        'accepted_at',
+        'completed_at',
+        'closed_at'
     )
 
     inlines = [DealItemInline]

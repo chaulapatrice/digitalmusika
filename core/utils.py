@@ -35,11 +35,13 @@ def send_text_message(phone_number: str, message: str) -> bool:
         return False
 
 
-def notify_agent_deal_assigned(phone_number: str, first_name: str, deal):
+def notify_agent_deal_assigned(deal):
     deal_url = deal.get_admin_url()
     deal_title = deal.title
     deal_id = deal.pk
-    payout = deal.get_commission()
+    commission = deal.get_commission()
+    phone_number = deal.assignee.phone
+    first_name = deal.assignee.first_name
     send_text_message(
         phone_number,
         f'Dear {first_name}, congratulations on getting a deal - #{deal_id} - {deal_title}. '
@@ -48,19 +50,43 @@ def notify_agent_deal_assigned(phone_number: str, first_name: str, deal):
         '2. Get the customer to buy\n'
         '3. Update deal status to "Accepted"\n'
         '4. Wait for the deal to be in "Completed" state\n'
-        f'5. Get paid ${payout} \n\n'
+        f'5. Get paid ${commission} \n\n'
         f'What are you waiting for? Go ahead and accept the deal here {deal_url}'
     )
 
 
-def notify_agent_deal_unassigned(phone_number: str, first_name: str, deal):
+def notify_agent_deal_unassigned(deal):
     deal_id = deal.pk
     deal_title = deal.title
+    phone_number = deal.assignee.phone
+    first_name = deal.assignee.first_name
 
     send_text_message(
         phone_number,
         f'Dear {first_name}, we regret to inform you that you have been unassigned'
         f' from deal #{deal_id} - {deal_title}'
+    )
+
+
+def notify_agent_deal_completed(deal):
+    deal_id = deal.pk
+    deal_title = deal.title
+    commission: float = deal.get_commission()
+    assignee = deal.assignee
+    balance = float(assignee.balance) + commission
+
+    can_withdraw_message = 'You can withdraw if you like' if balance >= 10.00 else 'You currently cannot withdraw, your balance is below $10'
+    assignee.balance = balance
+    assignee.save()
+    phone_number = deal.assignee.phone
+    first_name = deal.assignee.first_name
+
+    send_text_message(
+        phone_number,
+        f'Dear {first_name}, congratulations on getting deal #{deal_id} ({deal_title}) completed.'
+        f'Your have earned ${commission}. '
+        f'Your current balance is ${balance}\n\n'
+        f'{can_withdraw_message}'
     )
 
 
@@ -75,6 +101,17 @@ def notify_customer_complete_payment(customer, payment):
         f'Dear {first_name}, order #{order_number} has been created for you on your request. \n'
         f'To fulfill the order please complete payment using the link provided\n\n'
         f'{payment_link}'
+    )
+
+
+def notify_customer_order_ready(order):
+    first_name = order.customer.first_name
+    phone_number = order.customer.phone
+
+    send_text_message(
+        phone_number,
+        f'Dear {first_name}, your order is ready for delivery.'
+        'Your order is expected to arrive in the next 2 - 3 days.'
     )
 
 

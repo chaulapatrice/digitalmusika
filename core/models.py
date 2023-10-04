@@ -5,6 +5,8 @@ from .utils import (
     notify_agent_deal_assigned,
     notify_agent_deal_unassigned,
     notify_customer_complete_payment,
+    notify_agent_deal_completed,
+    notify_customer_order_ready,
     get_paynow_client,
     now)
 from django.urls import reverse
@@ -100,6 +102,12 @@ class Order(models.Model):
         return sum([item.total() for item in self.items.all()])
 
 
+@receiver(post_save, sender=Order)
+def post_save_deal(sender, instance: Order, created,  **kwargs):
+    if instance.status == Order.AWAITING_DELIVERY:
+        notify_customer_order_ready(instance)
+
+
 class OrderItem(models.Model):
     quantity = models.PositiveBigIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -163,8 +171,8 @@ class Deal(models.Model):
     assignee = models.ForeignKey(
         'users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='assignee')
 
-    customer = models.OneToOneField(
-        'users.User', null=True, on_delete=models.SET_NULL, related_name='customer')
+    customer = models.ForeignKey(
+        'users.User', null=True, on_delete=models.SET_NULL, related_name='customer_details')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -200,35 +208,18 @@ class DealItem(models.Model):
 def post_save_deal(sender, instance: Deal, created,  **kwargs):
     if created:
         if instance.assignee != None:
-            notify_agent_deal_assigned(
-                instance.assignee.phone,
-                instance.assignee.first_name,
-                instance)
+            notify_agent_deal_assigned(instance)
     else:
         if instance.old_assignee != None and instance.assignee != None:
             if instance.old_assignee.pk != instance.assignee.pk:
-
-                notify_agent_deal_unassigned(
-                    instance.old_assignee.phone,
-                    instance.old_assignee.first_name,
-                    instance)
-
-                notify_agent_deal_assigned(
-                    instance.assignee.phone,
-                    instance.assignee.first_name,
-                    instance)
+                notify_agent_deal_unassigned(instance)
+                notify_agent_deal_assigned(instance)
 
         if instance.old_assignee == None and instance.assignee != None:
-            notify_agent_deal_assigned(
-                instance.assignee.phone,
-                instance.assignee.first_name,
-                instance)
+            notify_agent_deal_assigned(instance)
 
         if instance.old_assignee != None and instance.assignee == None:
-            notify_agent_deal_unassigned(
-                instance.old_assignee.phone,
-                instance.old_assignee.first_name,
-                instance)
+            notify_agent_deal_unassigned(instance)
 
     if instance.status == Deal.SEALED and instance.customer != None:
         # 1. Create an order
@@ -243,11 +234,15 @@ def post_save_deal(sender, instance: Deal, created,  **kwargs):
             )
 
             # 2. Create payment
+            return_url = settings.SITE_BASE_URL_NGROK
+            result_url = settings.SITE_BASE_URL_NGROK + \
+                reverse('paynow-webhook', kwargs={'order_id': order.pk})
             paynow = get_paynow_client(
-                'https://google.com', 'https://gooogle.com')
+                return_url, result_url)
             order_number = order.pk
+            email = 'chaulapatrice@gmail.com' if settings.DEBUG else order.customer.email
             payment = paynow.create_payment(
-                f'Order #{order_number}', order.customer.email)
+                f'Order #{order_number}', email)
 
             for deal_item in instance.items.all():
                 item = OrderItem.objects.create(
@@ -261,9 +256,6 @@ def post_save_deal(sender, instance: Deal, created,  **kwargs):
             response = paynow.send(payment)
 
             if response.success:
-                print(response)
-                print("**************************************************************")
-                dir(response)
                 # Insert payment into the database
                 payment = Payment.objects.create(
                     status=Payment.CREATED,
@@ -276,6 +268,10 @@ def post_save_deal(sender, instance: Deal, created,  **kwargs):
                 )
                 # 3. Notify customer to complete payment
                 notify_customer_complete_payment(payment.customer, payment)
+
+    if instance.status == Deal.COMPLETED:
+        # Notify assignee that their balance has increased
+        notify_agent_deal_completed(instance)
 
 
 @receiver(post_delete, sender=Deal)

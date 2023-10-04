@@ -58,14 +58,17 @@ class User(AbstractUser):
     )
 
     phone = models.CharField(max_length=13)
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     type = models.CharField(max_length=45, choices=TYPES)
     house_number = models.IntegerField()
     street = models.CharField(max_length=255)
     suburb = models.CharField(max_length=255)
     city = models.CharField(max_length=255, choices=CITIES)
     province = models.CharField(max_length=255, choices=PROVINCES)
-    lat = models.DecimalField(max_digits=15, decimal_places=8, null=True, blank=True)
-    lng = models.DecimalField(max_digits=15, decimal_places=8, null=True, blank=True)
+    lat = models.DecimalField(
+        max_digits=15, decimal_places=8, null=True, blank=True)
+    lng = models.DecimalField(
+        max_digits=15, decimal_places=8, null=True, blank=True)
     created_at = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
