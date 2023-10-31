@@ -39,6 +39,9 @@ INSTALLED_APPS = [
     'users',
     'core',
     'image_uploader_widget',
+    'django.contrib.humanize',
+    'crispy_forms',
+    'crispy_bootstrap5'
 ]
 
 MIDDLEWARE = [
@@ -329,3 +332,9 @@ PAYNOW_INTEGRATION_ID = '11927'
 PAYNOW_INTEGRATION_KEY = '97f4b76f-0570-4ae0-b8e2-e7b8f5c6fe7f'
 # Time
 TIME_ZONE = 'Africa/Johannesburg'
+
+LOGIN_REDIRECT_URL = '/'
+LOGIN_URL = '/login'
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+
+CRISPY_TEMPLATE_PACK = "bootstrap5"

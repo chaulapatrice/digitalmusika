@@ -1,0 +1,32 @@
+{% extends "./base.html" %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+<div class="row">
+    <div class="col-md-4"></div>
+    <div class="col-md-4">
+        <h3 class="border-bottom pb-3">Register</h3>
+        {% if error %}
+        <div class="alert alert-danger mt-3" role="alert">
+            {{error}}
+        </div>
+        {% endif %}
+        <form method="POST">
+            {% csrf_token %}
+            {{form | crispy}}
+            <button type="submit" class="btn btn-primary w-100 fw-bold">Register</button>
+        </form>
+        <div class="py-3">
+            <p class="text-center">or</p>
+            <script type="text/javascript">
+                function gotoLogin() {
+                    const { search } = window.location;
+                    window.location = `/login${search}`;
+                }
+            </script>
+            <button onclick="gotoLogin()" class="btn btn-outline-primary w-100 fw-bold">Login</button>
+        </div>
+    </div>
+    <div class="col-md-4"></div>
+</div>
+{% endblock %}

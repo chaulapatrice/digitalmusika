@@ -169,7 +169,7 @@ class Deal(models.Model):
     closed_at = models.DateTimeField(null=True, blank=True)
 
     assignee = models.ForeignKey(
-        'users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='assignee')
+        'users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='deals')
 
     customer = models.ForeignKey(
         'users.User', null=True, on_delete=models.SET_NULL, related_name='customer_details')
@@ -185,9 +185,29 @@ class Deal(models.Model):
         return settings.SITE_BASE_URL + reverse('admin:{0}_{1}_change'
                                                 .format(self._meta.app_label, self._meta.model_name),
                                                 args=(self.pk,))
+    
+    def get_customer_invitation_link(self) -> str:
+        return settings.SITE_BASE_URL + reverse('invite_customer_to_deal', kwargs={'pk': self.pk} )
 
     def get_commission(self):
         return sum([item.total() for item in self.items.all()]) * 0.1
+
+    def get_value(self):
+        return sum([item.total() for item in self.items.all()])
+    
+    def status_class(self) -> str:
+        if self.status == Deal.OPEN:
+            return 'bg-secondary'
+        if self.status == Deal.ACCEPTED:
+            return 'bg-info text-dark'
+        if self.status == Deal.SEALED:
+            return 'bg-info text-dark'
+        if self.status == Deal.COMPLETED:
+            return 'bg-success'
+        if self.status == Deal.CLOSED:
+            return 'bg-dark'
+
+        return 'bg-warning text-dark'
 
 
 class DealItem(models.Model):
@@ -236,7 +256,7 @@ def post_save_deal(sender, instance: Deal, created,  **kwargs):
             # 2. Create payment
             return_url = settings.SITE_BASE_URL_NGROK
             result_url = settings.SITE_BASE_URL_NGROK + \
-                reverse('paynow-webhook', kwargs={'order_id': order.pk})
+                reverse('paynow_webhook', kwargs={'order_id': order.pk})
             paynow = get_paynow_client(
                 return_url, result_url)
             order_number = order.pk
@@ -295,3 +315,15 @@ class ProductRequest(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+class Withdrawal(models.Model):
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    innbucks_qrcode = models.ImageField(upload_to='withdrawals')
+    paid = models.BooleanField(default=False)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return str(self.user) + ' - #' +  str(self.pk) + ' - $' + str(self.amount) 

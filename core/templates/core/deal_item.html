@@ -1,0 +1,23 @@
+{% load humanize %}
+<div class="card border-0 mt-3 p-3">
+    <div class="row border-bottom">
+        <div class="col-md-12">
+            <h4 class="card-title">{{item.product.name}}</h4>
+            <div>
+                <img src="{{item.product.image.url}}" class="img-fluid" width="300" alt="{{item.product.name}}">
+            </div>
+        </div>
+        <div class="col-md-12">
+            <div>
+                <p class="card-text py-3">{{item.product.description}}</p>
+            </div>
+            <ul class="list-group list-group-flush border-top">
+                <li class="list-group-item"><b>Price:</b> $
+                    {{item.product.price|floatformat:2|intcomma}}</li>
+                <li class="list-group-item"><b>Quantity:</b> {{item.quantity}}</li>
+                <li class="list-group-item"><b>Total:</b> $ {{item.total|floatformat:2|intcomma}}</li>
+            </ul>
+
+        </div>
+    </div>
+</div>

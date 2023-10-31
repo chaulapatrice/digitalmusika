@@ -1,7 +1,7 @@
 from typing import Any
 from django.contrib import admin
 from django.http.request import HttpRequest
-from .forms import ProductForm, ProductRequestForm
+from .forms import ProductForm, ProductRequestForm, AdminWithdrawalForm
 from .models import (
     Payment,
     Order,
@@ -10,7 +10,8 @@ from .models import (
     Deal,
     DealItem,
     Payment,
-    ProductRequest
+    ProductRequest,
+    Withdrawal
 )
 # Register your models here.
 
@@ -111,7 +112,8 @@ class DealModelAdmin(admin.ModelAdmin):
     readonly_fields = (
         'accepted_at',
         'completed_at',
-        'closed_at'
+        'closed_at',
+        'customer'
     )
 
     inlines = [DealItemInline]
@@ -124,7 +126,7 @@ class DealModelAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request: HttpRequest, obj: Deal | None = None) -> list[str] | tuple[str]:
         if obj == None:
-            return ('status', 'assignee', 'customer')
+            return ('status', 'assignee', 'customer', 'accepted_at', 'completed_at', 'closed_at')
         else:
             return super().get_readonly_fields(request, obj)
 
@@ -137,3 +139,20 @@ class ProductRequestModelAdmin(admin.ModelAdmin):
         'updated_at'
     )
     form = ProductRequestForm
+
+@admin.register(Withdrawal)
+class WithdrawalAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'amount',
+        'user',
+        'paid',
+        'paid_at',
+        'created_at'
+    )
+
+    readonly_fields = (
+        'user',
+        'amount'
+    )
+    form = AdminWithdrawalForm

@@ -1,0 +1,102 @@
+{% extends "./base.html" %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+{% block body %}
+<div class="mb-3">
+    <h1 class="fst-italic fw-lighter">{{deal.title}}</h1>
+    <h3 class="badge fw-bold rounded-pill {{deal.status_class}}">{{deal.status|upper}}</h3>
+</div>
+<div class="row border-bottom border-top bg-white py-3">
+    <div class="col-md-12">
+        <h1 class="fw-bold">Cost</h1>
+        <h3 class="text-muted fw-bold">$ {{deal.get_value|floatformat:2|intcomma }}</h3>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="border-top mt-3 p-3 card">
+            <h3 class="py-3">
+                Products to sell or sold
+            </h3>
+            <div>
+                {% for item in deal.items.all %}
+                    {% include "./deal_item.html" %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3 mt-3">
+            <h3 class="border-bottom pb-3">Your details</h3>
+            {% if deal.customer %}
+            <table class="table mt-3">
+                <tbody>
+                    <tr>
+                        <th>First name</th>
+                        <td>
+                            {{deal.customer.first_name}}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Last name</th>
+                        <td>
+                            {{deal.customer.last_name}}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Phone number</th>
+                        <td>
+                            <a href="tel:{{deal.customer.phone}}">{{deal.customer.phone}}</a>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Email</th>
+                        <td>
+                            <a href="mailto:{{deal.customer.email}}">{{deal.customer.email}}</a>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Province</th>
+                        <td>
+                            {{deal.customer.province}}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>City</th>
+                        <td>
+                            {{deal.customer.city}}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Suburb</th>
+                        <td>
+                            {{deal.customer.suburb}}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Street</th>
+                        <td>
+                            {{deal.customer.street}}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>House number</th>
+                        <td>
+                            {{deal.customer.house_number}}
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock body %}
