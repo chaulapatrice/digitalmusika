@@ -46,8 +46,8 @@ class SignupForm(forms.Form):
     house_number = forms.IntegerField(required=True)
 
 
-class CustomerAcceptsDealForm(forms.Form):
-    accepted = forms.BooleanField(required=True)
+class AcceptDealForm(forms.Form):
+    confirm= forms.BooleanField(required=True)
 
 class WithdrawalForm(forms.Form):
     amount = forms.DecimalField(max_digits=10, decimal_places=2)

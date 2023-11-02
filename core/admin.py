@@ -53,10 +53,10 @@ class OrderItemInline(admin.TabularInline):
 
     extra = 0
 
-    def has_delete_permission(self, request: HttpRequest, obj: OrderItem | None = None) -> bool:
+    def has_delete_permission(self, request: HttpRequest, obj: OrderItem) -> bool:
         return False
 
-    def has_add_permission(self, request: HttpRequest, obj: OrderItem | None = None) -> bool:
+    def has_add_permission(self, request: HttpRequest, obj: OrderItem) -> bool:
         return False
 
 
@@ -118,13 +118,13 @@ class DealModelAdmin(admin.ModelAdmin):
 
     inlines = [DealItemInline]
 
-    def has_delete_permission(self, request: HttpRequest, obj: Deal | None = None) -> bool:
+    def has_delete_permission(self, request: HttpRequest, obj: Deal) -> bool:
         if obj != None:
             if obj.status in [Deal.ACCEPTED, Deal.SEALED, Deal.COMPLETED]:
                 return False
         return super().has_change_permission(request, obj)
 
-    def get_readonly_fields(self, request: HttpRequest, obj: Deal | None = None) -> list[str] | tuple[str]:
+    def get_readonly_fields(self, request: HttpRequest, obj: Deal) -> tuple[str]:
         if obj == None:
             return ('status', 'assignee', 'customer', 'accepted_at', 'completed_at', 'closed_at')
         else:

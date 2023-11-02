@@ -5,7 +5,7 @@ from django.http.response import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import Order, Payment, Deal, Withdrawal
 from .utils import now
-from .forms import LoginForm, SignupForm, WithdrawalForm
+from .forms import LoginForm, SignupForm, WithdrawalForm, AcceptDealForm
 from django.contrib.auth import authenticate, login
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
@@ -167,20 +167,28 @@ def deal_view(request: HttpRequest, pk=None) -> HttpResponse:
 @login_required
 def invite_customer_to_deal(request: HttpRequest, pk=None) -> HttpResponse:
     deal = get_object_or_404(Deal, pk=pk)
-    form = SignupForm()
+    form = AcceptDealForm()
     customer = request.user
     error = None
+    accepted_deal = deal.status == Deal.ACCEPTED
+    deal_taken_byother = False
+
+    if deal.status == Deal.ACCEPTED and deal.customer:
+        if deal.customer.pk != customer.pk:
+            deal_taken_byother = True
+        
 
     if request.method == 'POST':
-        form = SignupForm(request.POST)        
+        form = AcceptDealForm(request.POST)        
         if form.is_valid():
             try:
                 deal.status = Deal.ACCEPTED
                 deal.accepted_at = now()
                 deal.customer = customer
                 deal.save()
+                accepted_deal = True
             except Exception as e:
-                error = 'Failed to signup'
+                error = 'Failed to accept deal'
                 raise e
         
            
@@ -189,7 +197,9 @@ def invite_customer_to_deal(request: HttpRequest, pk=None) -> HttpResponse:
         'form': form,
         'customer': customer,
         'deal': deal,
-        'error': error
+        'error': error,
+        'accepted_deal': accepted_deal,
+        'deal_taken_byother': deal_taken_byother
     })
 
 @login_required
