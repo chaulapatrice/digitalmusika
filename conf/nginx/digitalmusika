@@ -1,0 +1,16 @@
+upstream api {
+   server localhost:8000;
+}
+
+server {
+       listen 80;
+       listen [::]:80;
+
+       server_name digitalmusika.iweb.systems;
+
+       location / {
+            proxy_pass http://api/;
+            proxy_set_header Host            $host;
+            proxy_set_header X-Forwarded-For $remote_addr;  
+       }
+}
