@@ -6,7 +6,7 @@ server {
        listen 80;
        listen [::]:80;
 
-       server_name digitalmusika.iweb.systems;
+       server_name digitalmusika.com;
 
        location / {
             proxy_pass http://api/;

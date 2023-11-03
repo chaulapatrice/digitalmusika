@@ -24,7 +24,8 @@ SECRET_KEY = 'django-insecure-e!=#n*zvr+x%n16_x%jd-pbksdq)=_vpojeytoh-c5_wav7lq^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['localhost', 'digitalmusika.com']
+CSRF_TRUSTED_ORIGINS = ['https://digitalmusika.com']
 
 
 # Application definition
