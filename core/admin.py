@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.http.request import HttpRequest
 from .forms import ProductForm, ProductRequestForm, AdminWithdrawalForm
 from .models import (
+    DealBid,
     Payment,
     Order,
     OrderItem,
@@ -101,6 +102,16 @@ class ProductInline(admin.TabularInline):
 class DealItemInline(admin.TabularInline):
     model = DealItem
 
+class DealBidInline(admin.TabularInline):
+    model = DealBid
+
+    extra = 0
+
+    def has_delete_permission(self, request: HttpRequest, obj: DealBid) -> bool:
+        return False
+
+    def has_add_permission(self, request: HttpRequest, obj: DealBid) -> bool:
+        return False
 
 @admin.register(Deal)
 class DealModelAdmin(admin.ModelAdmin):
@@ -116,15 +127,15 @@ class DealModelAdmin(admin.ModelAdmin):
         'customer'
     )
 
-    inlines = [DealItemInline]
+    inlines = [DealItemInline, DealBidInline]
 
-    def has_delete_permission(self, request: HttpRequest, obj: Deal) -> bool:
+    def has_delete_permission(self, request: HttpRequest, obj: Deal = None) -> bool:
         if obj != None:
             if obj.status in [Deal.ACCEPTED, Deal.SEALED, Deal.COMPLETED]:
                 return False
         return super().has_change_permission(request, obj)
 
-    def get_readonly_fields(self, request: HttpRequest, obj: Deal) -> tuple[str]:
+    def get_readonly_fields(self, request: HttpRequest, obj: Deal = None) -> tuple[str]:
         if obj == None:
             return ('status', 'assignee', 'customer', 'accepted_at', 'completed_at', 'closed_at')
         else:

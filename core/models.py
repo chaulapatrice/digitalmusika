@@ -208,6 +208,16 @@ class Deal(models.Model):
             return 'bg-dark'
 
         return 'bg-warning text-dark'
+    def get_heat_class(self) -> str:
+        bid_count = self.deal_bids.count()
+
+        if bid_count >= 10:
+            return 'danger'
+
+        if bid_count >= 5:
+            return 'warning'
+        
+        return 'success'
 
 
 class DealItem(models.Model):
@@ -222,6 +232,15 @@ class DealItem(models.Model):
 
     def total(self):
         return float(self.product.price) * self.quantity
+
+
+class DealBid(models.Model):
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='user_bids')
+    deal = models.ForeignKey(Deal, on_delete=models.CASCADE, related_name='deal_bids')
+    offer_description = models.TextField(max_length=512)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
 
 
 @receiver(post_save, sender=Deal)
@@ -308,7 +327,7 @@ class ProductRequest(models.Model):
     description = models.TextField()
     image = models.ImageField(upload_to='product_requests')
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     user = models.ForeignKey(
         'users.User', on_delete=models.CASCADE, related_name='product_requests')
@@ -323,7 +342,7 @@ class Withdrawal(models.Model):
     paid = models.BooleanField(default=False)
     paid_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
         return str(self.user) + ' - #' +  str(self.pk) + ' - $' + str(self.amount) 

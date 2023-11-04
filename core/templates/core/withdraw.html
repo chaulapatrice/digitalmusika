@@ -58,6 +58,32 @@
 
     <div class="card p-3 mt-3">
         <h3 class="border-bottom pb-3">All withdrawals</h3>
+        {% if request.user_agent.is_mobile %}
+        <ol class="list-group">
+            {% for withdraw in withdrawals %}
+            <li class="list-group-item d-flex justify-content-between align-items-start">
+                <div class="ms-2 me-auto">
+                    <div class="fw-bold">${{withdraw.amount|floatformat:2|intcomma}} / {{withdraw.created_at}}</div>
+                    <span class="text-muted">Paid at:</span>
+                    {% if withdraw.paid_at %}
+                    {{withdraw.paid_at }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </div>
+                {% if withdraw.paid %}
+                <span class="badge fw-bold rounded-pill bg-success">
+                    <i class="bi bi-check-circle-fill"></i> Paid
+                </span>
+                {% else %}
+                <span class="badge fw-bold rounded-pill bg-dark">
+                    <i class="bi bi-alarm-fill"></i> Pending
+                </span>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ol>
+        {% else %}
         <table class="table mt-3">
             <thead>
                 <tr>
@@ -100,6 +126,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

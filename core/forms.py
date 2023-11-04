@@ -53,3 +53,25 @@ class WithdrawalForm(forms.Form):
     amount = forms.DecimalField(max_digits=10, decimal_places=2)
     innbucks_qrcode = forms.ImageField()
 
+class SignoutForm(forms.Form):
+    signout = forms.IntegerField()
+
+class DealFilterForm(forms.Form):
+    task = forms.CharField(required=False, 
+                            widget=forms.TextInput(
+                                attrs={'placeholder': 'Eg. Tengesa Huku'}))
+    
+    # minimum_value = forms.IntegerField(required=False, 
+    #                                     widget=forms.TextInput(
+    #                                         attrs={'placeholder': '$'}))
+    
+    # maximum_value = forms.IntegerField(required=False, 
+    #                                    widget=forms.TextInput(
+    #                                        attrs={'placeholder': '$'}))
+
+class AddDealBidForm(forms.Form):
+    offer_description = forms.CharField(required=True, widget=forms.Textarea())
+
+
+
+

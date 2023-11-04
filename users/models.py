@@ -57,19 +57,18 @@ class User(AbstractUser):
         (MIDLANDS_PROVINCE, 'Midlands'),
     )
 
-    phone = models.CharField(max_length=13)
+    phone = models.CharField(max_length=13, null=True)
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    type = models.CharField(max_length=45, choices=TYPES)
-    house_number = models.IntegerField()
-    street = models.CharField(max_length=255)
-    suburb = models.CharField(max_length=255)
-    city = models.CharField(max_length=255, choices=CITIES)
-    province = models.CharField(max_length=255, choices=PROVINCES)
+    type = models.CharField(max_length=45, choices=TYPES, default=CUSTOMER)
+    house_number = models.IntegerField(null=True)
+    street = models.CharField(max_length=255, null=True)
+    suburb = models.CharField(max_length=255, null=True)
+    city = models.CharField(max_length=255, choices=CITIES, null=True)
+    province = models.CharField(max_length=255, choices=PROVINCES, null=True)
     lat = models.DecimalField(
         max_digits=15, decimal_places=8, null=True, blank=True)
     lng = models.DecimalField(
         max_digits=15, decimal_places=8, null=True, blank=True)
-    created_at = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

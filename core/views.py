@@ -3,14 +3,23 @@ from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.http.response import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import Order, Payment, Deal, Withdrawal
+from .models import Order, Payment, Deal, Withdrawal, DealBid
 from .utils import now
-from .forms import LoginForm, SignupForm, WithdrawalForm, AcceptDealForm
-from django.contrib.auth import authenticate, login
+from .forms import (
+    LoginForm, 
+    SignupForm, 
+    WithdrawalForm, 
+    AcceptDealForm, 
+    SignoutForm,
+    DealFilterForm,
+    AddDealBidForm
+)
+from django.contrib.auth import authenticate, login, logout
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
 from users.models import User
-
+from django.core.exceptions import PermissionDenied
+from django.db.models import Q
 # Create your views here.
 
 
@@ -89,7 +98,8 @@ def user_login(request: HttpRequest) -> HttpResponse:
                 )
                 if user is not None:
                     login(request, user)
-                    return redirect('/')
+                    next = request.GET.get('next', '/')
+                    return redirect(next)
                 else:
                     error = 'Invalid login credentials'
 
@@ -101,6 +111,16 @@ def user_login(request: HttpRequest) -> HttpResponse:
     return render(request, 'core/login.html', {
         'error': error
     })
+
+@login_required
+def user_logout(request: HttpRequest) -> HttpResponse:
+    if request.method == "POST":
+        form = SignoutForm(request.POST)
+        if form.is_valid():
+            logout(request)
+            return redirect('login')
+    # You are not supposed to signout any other way :)   
+    raise PermissionDenied()
 
 def user_register(request: HttpRequest) -> HttpResponse:
     error = None
@@ -150,11 +170,54 @@ def user_register(request: HttpRequest) -> HttpResponse:
 def index(request: HttpRequest) -> HttpResponse:
 
     deals = Deal.objects.filter(assignee=request.user)
+    withdrawals = Withdrawal.objects.filter(paid=False)
+    payout = sum([withdrawal.amount for withdrawal in withdrawals])
 
     return render(request, 'core/index.html', {
-        'deals': deals
+        'deals': deals,
+        'payout': payout
     })
 
+@login_required
+def browse_deals(request: HttpRequest) -> HttpResponse:
+    deals = Deal.objects.filter(status=Deal.OPEN)
+    form = DealFilterForm(request.GET)
+
+    if form.data.get('search'):
+        deals = Deal.objects.filter(
+            Q(title__icontains=form.data.get('search')) | Q(description__icontains=form.data.get('search')))
+    
+    return render(request, 'core/deal_list.html', {
+        'deals': deals,
+        'form': form
+    })
+
+@login_required
+def deal_bids(request: HttpRequest, pk=None) -> HttpResponse:
+    deal = get_object_or_404(Deal, pk=pk)
+
+    form = AddDealBidForm()
+
+    user = request.user
+
+
+    if request.method == 'POST':
+        form = AddDealBidForm(request.POST)
+
+        if form.is_valid():
+            DealBid.objects.create(
+                user=user,
+                deal=deal,
+                offer_description=form.cleaned_data.get('offer_description')
+            )
+    
+    bids = DealBid.objects.filter(deal=deal)
+
+    return render(request, 'core/deal_bids.html', {
+        'deal': deal,
+        'bids': bids,
+        'form': form,
+    })
 
 @login_required
 def deal_view(request: HttpRequest, pk=None) -> HttpResponse:

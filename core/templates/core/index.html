@@ -8,8 +8,8 @@
         <h3 class="text-muted fw-bold">{{user.deals.count}}</h3>
     </div>
     <div class="col-md-4">
-        <h1 class="fw-bold"><i class="bi bi-clipboard-data"></i> Score</h1>
-        <h3 class="text-muted fw-bold">10.5</h3>
+        <h1 class="fw-bold"><i class="bi bi-paypal"></i> Payouts</h1>
+        <h3 class="text-muted fw-bold">$ {{payout|floatformat:2|intcomma}} </h3>
     </div>
     <div class="col-md-4">
         <h1 class="fw-bold"> Balance</h1>
@@ -52,6 +52,24 @@
 </div>
 <div class="card p-3 mt-3">
     <h3 class="border-bottom pb-3">Deals</h3>
+    {% if request.user_agent.is_mobile %}
+    <ol class="list-group">
+        {% for deal in deals %}
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+          <div class="ms-2 me-auto">
+            <div class="fw-bold">{{deal.title}}</div>
+            <span class="text-muted">Commission:</span> $ {{deal.get_commission|floatformat:2|intcomma }}  <span class="text-muted">Value:</span> $ {{deal.get_value|floatformat:2|intcomma }}
+          </div>
+          <span class="badge fw-bold rounded-pill {{deal.status_class}}">
+            {% if deal.status == 'sealed' or deal.status == 'completed' %}
+            <i class="bi bi-check-circle-fill"></i>
+            {% endif %}
+            {{deal.status|upper}}
+        </span>
+        </li>
+        {% endfor %}
+      </ol>
+    {% else %}
     <table class="table mt-3">
         <thead>
             <tr>
@@ -87,5 +105,6 @@
             {% endfor %}
         </tbody>
     </table>
+    {% endif %}
 </div>
 {% endblock body %}
