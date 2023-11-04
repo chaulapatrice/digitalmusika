@@ -170,7 +170,7 @@ def user_register(request: HttpRequest) -> HttpResponse:
 def index(request: HttpRequest) -> HttpResponse:
 
     deals = Deal.objects.filter(assignee=request.user)
-    withdrawals = Withdrawal.objects.filter(paid=False)
+    withdrawals = Withdrawal.objects.filter(paid=False, user=request.user)
     payout = sum([withdrawal.amount for withdrawal in withdrawals])
 
     return render(request, 'core/index.html', {
