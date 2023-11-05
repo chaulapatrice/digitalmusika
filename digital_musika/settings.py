@@ -327,7 +327,7 @@ JAZZMIN_UI_TWEAKS = {
 TWILIIO_ACCOUNT_SID = 'AC83c3e53c113e584b7dbfe6a65e947e0c'
 TWILIO_AUTH_TOKEN = '4b116313eb8d91bfce44ab4aaa03066c'
 SITE_BASE_URL = 'https://digitalmusika.com'
-SITE_BASE_URL_NGROK = 'https://29e4-41-13-13-131.ngrok-free.app'
+SITE_BASE_URL_NGROK = 'https://digitalmusika.com'
 
 # Payments
 PAYNOW_INTEGRATION_ID = '11927'
