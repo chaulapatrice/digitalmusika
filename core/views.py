@@ -144,7 +144,8 @@ def user_register(request: HttpRequest) -> HttpResponse:
                     suburb=cd.get('suburb'),
                     city=cd.get('city'),
                     province=cd.get('province'),
-                    house_number=cd.get('house_number')
+                    house_number=cd.get('house_number'),
+                    type=cd.get('role')
                 )
            
                 if user is not None:

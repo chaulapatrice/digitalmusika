@@ -188,7 +188,7 @@ JAZZMIN_SETTINGS = {
 
     # List of model admins to search from the search bar, search bar omitted if excluded
     # If you want to use a single search field you dont need to use a list, you can use a simple string
-    "search_model": ["auth.User", "auth.Group"],
+    "search_model": ["users.User", 'core.Deal'],
 
     # Field name on user model that contains avatar ImageField/URLField/Charfield or a callable that receives the user
     "user_avatar": None,
@@ -205,8 +205,6 @@ JAZZMIN_SETTINGS = {
             "permissions": ["auth.view_user"]},
 
         # external url that opens in a new window (Permissions can be added)
-        {"name": "Support", "url": "https://github.com/farridav/django-jazzmin/issues",
-            "new_window": True},
 
         # model admin to link to (Permissions checked against model)
         {"model": "auth.User"},
@@ -218,13 +216,6 @@ JAZZMIN_SETTINGS = {
     #############
     # User Menu #
     #############
-
-    # Additional links to include in the user menu on the top right ("app" url type is not allowed)
-    "usermenu_links": [
-        {"name": "Support", "url": "https://github.com/farridav/django-jazzmin/issues",
-            "new_window": True},
-        {"model": "auth.user"}
-    ],
 
     #############
     # Side Menu #
@@ -335,7 +326,7 @@ JAZZMIN_UI_TWEAKS = {
 
 TWILIIO_ACCOUNT_SID = 'AC83c3e53c113e584b7dbfe6a65e947e0c'
 TWILIO_AUTH_TOKEN = '4b116313eb8d91bfce44ab4aaa03066c'
-SITE_BASE_URL = 'http://localhost:8000'
+SITE_BASE_URL = 'https://digitalmusika.com'
 SITE_BASE_URL_NGROK = 'https://29e4-41-13-13-131.ngrok-free.app'
 
 # Payments

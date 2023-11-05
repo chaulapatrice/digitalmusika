@@ -13,3 +13,6 @@ class UserModelAdmin(admin.ModelAdmin):
         'province',
         'city'
     )
+
+    search_fields = ['username', 'first_name', 'last_name']
+    list_filter = ['province', 'city', 'type']

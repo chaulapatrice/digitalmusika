@@ -11,8 +11,7 @@ class User(AbstractUser):
     TYPES = (
         (CUSTOMER, 'Customer'),
         (PRODUCER, 'Producer'),
-        (MIDDLEMAN, 'Middleman'),
-        (ADMIN, 'Administrator')
+        (MIDDLEMAN, 'Middleman')
     )
 
     CITIES = (

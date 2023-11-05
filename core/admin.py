@@ -120,6 +120,9 @@ class DealModelAdmin(admin.ModelAdmin):
         'status'
     )
 
+    search_fields = ['title', 'description']
+    list_filter = ['status']
+
     readonly_fields = (
         'accepted_at',
         'completed_at',

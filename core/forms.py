@@ -34,6 +34,7 @@ class CheckIfUserExistsForm(forms.Form):
     email = forms.EmailField(required=True)
 
 class SignupForm(forms.Form):
+    role = forms.CharField(required=True, widget=forms.Select(choices=User.TYPES))
     first_name = forms.CharField(required=True)
     last_name = forms.CharField(required=True)
     email = forms.EmailField(required=True)
