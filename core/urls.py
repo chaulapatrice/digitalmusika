@@ -1,15 +1,14 @@
 from django.urls import path
 from .views import (
-    paynow_webhook, 
-    user_login, 
-    index, 
-    browse_deals,
-    deal_bids,
-    deal_view, 
-    invite_customer_to_deal, 
-    withdraw, 
+    paynow_webhook,
+    user_login,
     user_register,
-    user_logout
+    user_logout,
+    place_order,
+    ProductListView,
+    ProductDetailView,
+    OrderDetailView,
+    OrderListView
 )
 
 urlpatterns = [
@@ -17,10 +16,9 @@ urlpatterns = [
     path('login', user_login, name='login'),
     path('logout', user_logout, name='logout'),
     path('register', user_register, name='register'),
-    path('', index, name='dashboard'),
-    path('browse/deals', browse_deals, name='browse_deals'),  
-    path('deal/<int:pk>', deal_view, name='deal_view'),
-     path('deal/<int:pk>/bids', deal_bids, name='deal_bids'),
-    path('deal/<int:pk>/invitation', invite_customer_to_deal, name='invite_customer_to_deal'),
-    path('withdraw', withdraw, name='withdraw')
+    path('', ProductListView.as_view(), name='product_list'),
+    path('products/<int:pk>', ProductDetailView.as_view(), name='product_detail'),
+    path('products/<int:pk>/order', place_order, name='place_order'),
+    path('orders', OrderListView.as_view(), name='order_list'),
+    path('orders/<int:pk>', OrderDetailView.as_view(), name='order_detail'),
 ]

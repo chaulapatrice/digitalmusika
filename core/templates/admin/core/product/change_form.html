@@ -1,0 +1,405 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify jazzmin %}
+{% get_jazzmin_settings request as jazzmin_settings %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'vendor/select2/css/select2.min.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropper/4.1.0/cropper.min.css">
+    <style>
+        /* The Modal (background) */
+        .modal {
+          display: none; /* Hidden by default */
+          position: fixed; /* Stay in place */
+          z-index: 1060; /* Sit on top */
+          padding-top: 100px; /* Location of the box */
+          left: 0;
+          top: 0;
+          width: 100%; /* Full width */
+          height: 100%; /* Full height */
+          overflow: auto; /* Enable scroll if needed */
+          background-color: rgb(0,0,0); /* Fallback color */
+          background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+          
+        }
+        
+        /* Modal Content */
+        .modal-content {
+          background-color: #121212;
+          margin: auto;
+          padding: 20px;
+          border: 1px solid #020202;
+          width: 900px;
+        }
+        
+        /* The Close Button */
+        .close {
+          color: #fff;
+          float: right;
+          font-size: 28px;
+          font-weight: bold;
+          cursor: pointer;
+        }
+        
+        .close:hover,
+        .close:focus {
+          color: #dfd7d7f1;
+          text-decoration: none;
+          cursor: pointer;
+        }
+
+        .image-box-container {
+            height: 650px;
+            overflow: scroll;
+            border-top: 1px solid #333;
+            border-left: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-box-container::-webkit-scrollbar {
+            width: 10px;
+          }
+          
+          /* Track */
+           ::-webkit-scrollbar-track {
+            border: solid 1px #333;
+            width: 10px;
+          }
+          
+        
+          /* Handle */
+          .image-box-container::-webkit-scrollbar-thumb {
+            background: #555;
+            width: 10px;
+          }
+          
+          /* Handle on hover */
+          .image-box-container::-webkit-scrollbar-thumb:hover {
+            background: #333; 
+          }
+          .image-box-container::-webkit-scrollbar-corner {
+            background: #333;
+          }
+    </style>
+{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+    <script src="https://kit.fontawesome.com/ce42f10a8d.js" crossorigin="anonymous"></script>
+    {{ media }}
+{% endblock %}
+
+{% block coltype %}colM{% endblock %}
+
+{% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} change-form{% endblock %}
+
+{% if not is_popup %}
+    {% block breadcrumbs %}
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% trans 'Home' %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a></li>
+            <li class="breadcrumb-item">
+                {% if has_view_permission %}
+                    <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+                {% else %}
+                    {{ opts.verbose_name_plural|capfirst }}
+                {% endif %}
+            </li>
+            <li class="breadcrumb-item active">
+                {% if add %}
+                    {% blocktrans with name=opts.verbose_name %}Add {{ name }}{% endblocktrans %}
+                {% else %}
+                    {{ original|truncatewords:"18" }}
+                {% endif %}
+            </li>
+        </ol>
+    {% endblock %}
+{% endif %}
+
+{% block content_title %} {{ opts.verbose_name_plural|capfirst }} {% endblock %}
+
+{% block content %}
+
+    <div id="content-main" class="col-12">
+        <form {% if has_file_field %}enctype="multipart/form-data" {% endif %}action="{{ form_url }}" method="post" id="{{ opts.model_name }}_form" novalidate>
+            {% csrf_token %}
+            {% block form_top %}{% endblock %}
+
+            {% if errors %}
+                <div class="alert alert-danger">
+                    {% if errors|length == 1 %}
+                        {% trans "Please correct the error below." %}
+                    {% else %}
+                        {% trans "Please correct the errors below." %}
+                    {% endif %}
+                </div>
+                {% for error in adminform.form.non_field_errors %}
+                    <div class="alert alert-danger alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                        <i class="icon fa fa-ban"></i>{{ error|capfirst }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="row">
+                {% if is_popup %}<input type="hidden" name="{{ is_popup_var }}" value="1">{% endif %}
+                {% if to_field %}<input type="hidden" name="{{ to_field_var }}" value="{{ to_field }}">{% endif %}
+
+                {% block field_sets %}
+                    <div class="col-12 col-lg-9">
+                        <div class="card">
+                            <div class="card-body">
+                                {% get_changeform_template adminform as changeform_template %}
+                                {% include changeform_template %}
+                            </div>
+                        </div>
+                    </div>
+                {% endblock %}
+               
+                {% block after_field_sets %}{% endblock %}
+
+                {% block inline_field_sets %}{% endblock %}
+
+                {% block after_related_objects %}{% endblock %}
+
+                <div class="col-12 col-lg-3">
+                    <div id="jazzy-actions" class="{{ jazzmin_ui.actions_classes }}">
+                        {% block submit_buttons_bottom %}
+                            {% submit_row %}
+                            {% block object-tools %}
+                                {% if change %}
+                                    {% if not is_popup %}
+                                        <div class="object-tools">
+                                            {% block object-tools-items %}
+                                                {% change_form_object_tools %}
+                                                {% block extra_actions %}{% endblock %}
+                                            {% endblock %}
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                            {% endblock %}
+                        {% endblock %}
+                    </div>
+                </div>
+
+                {% block admin_change_form_document_ready %}
+                    <script type="text/javascript" id="django-admin-form-add-constants" src="{% static 'admin/js/change_form.js' %}" {% if adminform and add %}data-model-name="{{ opts.model_name }}"{% endif %}></script>
+                {% endblock %}
+
+                {% prepopulated_fields_js %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Image Cropper Modal -->
+    <div id="image-cropper-modal" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content">
+        <div class="d-flex justify-content-between">
+            <h3 class="text-white">Crop Image</h3>
+            <span class="close" onclick="closeModal()">&times</span>
+        </div>
+        <div class="image-box-container">
+           <div id="image-box"></div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-10 mt-2">
+                <div class="btn-group" role="group" aria-label="Zoom">
+                <button onclick="zoomIn()" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                <button onclick="zoomOut()" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                </div>
+
+                <div class="btn-group" role="group" aria-label="Move">
+
+                    <button onclick="movePositiveX()" class="btn btn-primary">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+
+                    <button onclick="moveNegativeX()" class="btn btn-primary">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+
+                    <button onclick="movePositiveY()" class="btn btn-primary">
+                        <i class="fa-solid fa-arrow-down"></i>
+                    </button>
+
+                    <button onclick="moveNegativeY()" class="btn btn-primary">
+                        <i class="fa-solid fa-arrow-up"></i>
+                    </button>
+                    
+                </div> 
+
+                <div class="btn-group" role="group" aria-label="Rotate">
+
+                    <button onclick="rotateClockwise()" class="btn btn-primary">
+                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                    </button>
+
+                    <button onclick="rotateAntiClockwise()" class="btn btn-primary">
+                        <i class="fa-solid fa-arrow-rotate-right"></i>
+                    </button>
+
+                </div>
+
+                <div class="btn-group" role="group" aria-label="Rotate">
+
+                    <button onclick="flipHorizontally()" class="btn btn-primary">
+                        <i class="fa-solid fa-arrows-left-right"></i>
+                    </button>
+
+                    <button onclick="flipVertically()" class="btn btn-primary">
+                        <i class="fa-solid fa-arrows-up-down"></i>
+                    </button>
+
+                </div>
+            </div>
+
+            <div class="col-md-2 mt-2 d-flex justify-content-end align-items-center">
+                <button onclick="closeModal()" class="btn btn-success">
+                    <i class="fa-solid fa-check"></i> Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+    </div>
+{% endblock %}
+
+{% block extrajs %}
+    {{  block.super }}
+    <script type="text/javascript" src="{% static 'vendor/select2/js/select2.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'jazzmin/js/change_form.js' %}"></script>
+    {% if jazzmin_settings.related_modal_active %}
+    <script type="text/javascript" src="{% static 'jazzmin/plugins/bootstrap-show-modal/bootstrap-show-modal.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'jazzmin/js/related-modal.js' %}"></script>
+    {% endif %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropper/4.1.0/cropper.min.js"></script>
+    <script type="text/javascript">
+        const imageBox = document.getElementById('image-box');
+
+        const imageInput = document.getElementById('id_image');
+
+        let cropper = null;
+
+        imageInput.addEventListener('change', () => {
+               $('#image-cropper-modal').toggle('show')
+               const img_data = imageInput.files[0]
+               const url = URL.createObjectURL(img_data)
+   
+               imageBox.innerHTML = `<img src="${url}" id="image" width="700px">`;
+   
+               $image = $('#image');
+   
+               console.log($image);
+   
+               image = $image.cropper({
+                   aspectRatio: 4 / 3,
+                   minCanvasHeight: 900,
+                   minCanvasWidth: 650,
+                   cropBoxResizable: false,
+                   dragMode: 'none',
+                   viewMode: 0,
+                   crop: function (event) {
+   
+                       console.log("X::", event.detail.x);
+                       $('#id_x').val(event.detail.x);
+   
+                       console.log("Y::", event.detail.y);
+   
+                       $('#id_y').val(event.detail.y);
+   
+   
+                       console.log("WIDTH::", event.detail.width);
+                       $('#id_width').val(event.detail.width);
+   
+                       console.log("HEIGHT::", event.detail.height);
+                       $('#id_height').val(event.detail.height);
+   
+                       console.log(event.detail.rotate);
+                       console.log(event.detail.scaleX);
+                       console.log(event.detail.scaleY);
+                   }
+               });
+
+               cropper = image[0].cropper
+           })
+
+           const zoomIn = () => {
+            if(!cropper) return;
+            cropper.zoom(0.1);
+           }
+
+           const zoomOut = () => {
+            if(!cropper) return;
+            cropper.zoom(-0.1);
+           }
+
+
+           const rotateClockwise = () => {
+               if(!cropper) return;
+               cropper.rotate(90)
+           }
+
+           const rotateAntiClockwise = () => {
+                if(!cropper) return;
+                cropper.rotate(-90)
+           }
+
+           let flippedHorizontally = false
+           let flippedVertically = false
+
+           const flipHorizontally = () => {
+               if(!cropper) return;
+               if(!flippedHorizontally)
+                    cropper.scale(-1, 1);
+               else
+                    cropper.scale(1, 1)
+            
+               flippedHorizontally = !flippedHorizontally
+                
+           }
+
+
+
+           const flipVertically = () => {
+                if(!cropper) return;
+
+                if(!flippedVertically)
+                    cropper.scale(1, -1)
+                else
+                    cropper.scale(1, 1)
+                
+                flippedVertically = !flippedVertically
+           }
+
+           const movePositiveY = () => {
+               if(!cropper) return;
+               cropper.move(0, 5)
+           }
+
+           const moveNegativeY = () => {
+               if(!cropper) return;
+               cropper.move(0, -5);
+           }
+
+           const movePositiveX = () => {
+                if(!cropper) return;
+                cropper.move(5, 0)
+           }
+
+           const moveNegativeX = () => {
+                if(!cropper) return;
+                cropper.move(-5, 0);
+           }
+
+           const closeModal = () => {
+            $('#image-cropper-modal').toggle('hide')
+           }
+
+
+    </script>
+{% endblock %}

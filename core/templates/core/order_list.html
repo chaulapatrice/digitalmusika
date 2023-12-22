@@ -1,0 +1,40 @@
+{% extends "./base.html" %}
+{% load humanize %}
+
+{% block body %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Order #</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for order in page_obj %}
+        <tr>
+            <th>
+                <a href="{% url 'order_detail' order.pk %}">{{order.pk}}</a>
+            </th>
+            <td>
+                <a href="{% url 'order_detail' order.pk %}"> {{order.title}} </a>
+            </td>
+            <td>
+                <span class="badge fw-bold rounded-pill {{order.status_class}}">
+                    {% if order.status == 'delivered' %}
+                    <i class="bi bi-check-circle-fill"></i>
+                    {% endif %}
+                    {{order.status|upper}}
+                </span>
+            </td>
+            <td>
+                {{order.total}}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% include "./includes/pagination.html" %}
+{% endblock %}

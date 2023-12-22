@@ -1,0 +1,25 @@
+{% extends "./base.html" %}
+{% load humanize %}
+{% block extra_style %}
+<style>
+    .card {
+        box-shadow: 11px 10px 5px -4px rgba(0, 0, 0, 0.15);
+        -webkit-box-shadow: 11px 10px 5px -4px rgba(0, 0, 0, 0.15);
+        -moz-box-shadow: 11px 10px 5px -4px rgba(0, 0, 0, 0.15);
+    }
+</style>
+{% endblock %}
+{% block body %}
+
+{% include "./includes/pagination.html" %}
+
+<div class="row">
+    {% for product in page_obj %}
+        {% include "./includes/product.html" %}
+    {% endfor %}
+</div>
+
+{% include "./includes/pagination.html" %}
+
+
+{% endblock %}

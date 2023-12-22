@@ -1,18 +1,17 @@
 from typing import Any
 from django.contrib import admin
+from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
-from .forms import ProductForm, ProductRequestForm, AdminWithdrawalForm
+from .forms import ProductForm, ProductRequestForm
+from PIL import Image
 from .models import (
-    DealBid,
     Payment,
     Order,
     OrderItem,
     Product,
-    Deal,
-    DealItem,
     Payment,
     ProductRequest,
-    Withdrawal
+    ProductImage
 )
 # Register your models here.
 
@@ -65,11 +64,13 @@ class OrderItemInline(admin.TabularInline):
 class OrderModelAdmin(admin.ModelAdmin):
     list_display = (
         'id',
+        'title',
         'status'
     )
 
     readonly_fields = (
-        'deal',
+        'title',
+        'description',
         'pending_at',
         'awaiting_delivery_at',
         'delivered_at',
@@ -77,10 +78,23 @@ class OrderModelAdmin(admin.ModelAdmin):
         'sent_out_at',
         'cancelled_at',
         'failed_at',
-        'customer'
+        'customer',
+        'producer'
     )
 
     inlines = (OrderItemInline,)
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        queryset = super().get_queryset(request)
+
+        if request.user.is_superuser == False:
+            queryset = queryset.filter(producer=request.user)
+
+        return queryset
+
+
+class ProductImageModelAdmin(admin.TabularInline):
+    model = ProductImage
 
 
 @admin.register(Product)
@@ -94,55 +108,41 @@ class ProductModelAdmin(admin.ModelAdmin):
     )
     form = ProductForm
 
+    inlines = [ProductImageModelAdmin]
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        queryset = super().get_queryset(request)
+
+        if request.user.is_superuser == False:
+            queryset = queryset.filter(user=request.user)
+
+        return queryset
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Pass the user to the form
+        self.form.user = request.user
+        kwargs['form'] = self.form
+
+        return super().get_form(request, obj, **kwargs)
+
+    def save_model(self, request, obj, form, change):
+
+        obj.save()
+
+        x = form.cleaned_data.get('x')
+        y = form.cleaned_data.get('y')
+        width = form.cleaned_data.get('width')
+        height = form.cleaned_data.get('height')
+
+        # Only crop image when x,y, width and height have been provided
+        if x and y and width and height:
+            image = Image.open(obj.image)
+            cropped_image = image.crop((x, y, width + x, height + y))
+            cropped_image.save(obj.image.path)
+
 
 class ProductInline(admin.TabularInline):
     model = Product
-
-
-class DealItemInline(admin.TabularInline):
-    model = DealItem
-
-class DealBidInline(admin.TabularInline):
-    model = DealBid
-
-    extra = 0
-
-    def has_delete_permission(self, request: HttpRequest, obj: DealBid) -> bool:
-        return False
-
-    def has_add_permission(self, request: HttpRequest, obj: DealBid) -> bool:
-        return False
-
-@admin.register(Deal)
-class DealModelAdmin(admin.ModelAdmin):
-    list_display = (
-        'title',
-        'status'
-    )
-
-    search_fields = ['title', 'description']
-    list_filter = ['status']
-
-    readonly_fields = (
-        'accepted_at',
-        'completed_at',
-        'closed_at',
-        'customer'
-    )
-
-    inlines = [DealItemInline, DealBidInline]
-
-    def has_delete_permission(self, request: HttpRequest, obj: Deal = None) -> bool:
-        if obj != None:
-            if obj.status in [Deal.ACCEPTED, Deal.SEALED, Deal.COMPLETED]:
-                return False
-        return super().has_change_permission(request, obj)
-
-    def get_readonly_fields(self, request: HttpRequest, obj: Deal = None) -> tuple[str]:
-        if obj == None:
-            return ('status', 'assignee', 'customer', 'accepted_at', 'completed_at', 'closed_at')
-        else:
-            return super().get_readonly_fields(request, obj)
 
 
 @admin.register(ProductRequest)
@@ -153,20 +153,3 @@ class ProductRequestModelAdmin(admin.ModelAdmin):
         'updated_at'
     )
     form = ProductRequestForm
-
-@admin.register(Withdrawal)
-class WithdrawalAdmin(admin.ModelAdmin):
-    list_display = (
-        'id',
-        'amount',
-        'user',
-        'paid',
-        'paid_at',
-        'created_at'
-    )
-
-    readonly_fields = (
-        'user',
-        'amount'
-    )
-    form = AdminWithdrawalForm

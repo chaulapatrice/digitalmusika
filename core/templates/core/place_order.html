@@ -1,0 +1,21 @@
+{% extends "./base.html" %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+{% block body %}
+<h1>Place order for <a target="_blank"
+        href="{% url 'product_detail' product.pk %}">{{product.name}}</a></h1>
+
+<div class="card p-3">
+    <form method="POST">
+        {% csrf_token %}
+        {{form | crispy}}
+        <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading">Making payments</h4>
+            <p>After submitting this order, you will be redirected to paynow to complete the payment</p>
+            <hr>
+            <p class="mb-0">Happy shopping <i class="bi bi-emoji-heart-eyes-fill"></i> </p>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 fw-bold">Submit</button>
+    </form>
+</div>
+{% endblock %}

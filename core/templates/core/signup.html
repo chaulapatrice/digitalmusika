@@ -3,8 +3,7 @@
 
 {% block body %}
 <div class="row">
-    <div class="col-md-4"></div>
-    <div class="col-md-4">
+    <div class="col-md-6">
         <h3 class="border-bottom pb-3">Register</h3>
         {% if error %}
         <div class="alert alert-danger mt-3" role="alert">
@@ -13,8 +12,7 @@
         {% endif %}
         <form method="POST">
             {% csrf_token %}
-            {{form | crispy}}
-            <button type="submit" class="btn btn-primary w-100 fw-bold">Register</button>
+            {% crispy  form %}
         </form>
         <div class="py-3">
             <p class="text-center">or</p>
@@ -27,6 +25,35 @@
             <button onclick="gotoLogin()" class="btn btn-outline-primary w-100 fw-bold">Login</button>
         </div>
     </div>
-    <div class="col-md-4"></div>
+    <div class="col-md-6">
+        <div style="position:sticky">
+            <h3>Search your location on map</h3>
+            <div id="map" style="height: 600px;border-radius:5px;box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.14);
+            -webkit-box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.14);
+            -moz-box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.14);"></div>
+            <script>
+                const key = 'OfPhV2FIN6c2csXFxDd9'
+                var map = L.map('map').setView([-19.0154, 29.1549], 7);
+                const layer = L.tileLayer(`https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${key}`, {
+                    tileSize: 512,
+                    zoomOffset: -1,
+                    minZoom: 1,
+                    attribution: "\u003ca href=\"https://www.maptiler.com/copyright/\" target=\"_blank\"\u003e\u0026copy; MapTiler\u003c/a\u003e \u003ca href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\"\u003e\u0026copy; OpenStreetMap contributors\u003c/a\u003e",
+                    crossOrigin: true
+                }).addTo(map);
+
+                L.control.maptilerGeocoding({ apiKey: key }).addTo(map);
+
+                map.on('moveend', function moveEndHandler(event) {
+                    const { lat, lng } = event.target._lastCenter
+
+                    document.querySelector('#id_lat').value = lat
+                    document.querySelector('#id_lng').value = lng
+                })
+
+
+            </script>
+        </div>
+    </div>
 </div>
 {% endblock %}
