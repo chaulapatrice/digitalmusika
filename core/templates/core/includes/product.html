@@ -1,0 +1,21 @@
+{% load humanize %}
+<div class="col-md-3">
+    <div class="card mb-3 animate__animated animate__rollIn">
+        <img class="card-img-top img-responsive" src="{{product.image.url}}" alt="Card image cap">
+        <div class="card-body">
+            <h6 class="card-title fw-bold">{{product.name}}</h6>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><span class="fw-bold text-muted me-3">Price:</span>
+                    ${{product.price|floatformat:2|intcomma}}</li>
+                <li class="list-group-item"><span class="fw-bold text-muted me-3">City:</span> {{product.user.city}}
+                </li>
+                <li class="list-group-item"><span class="fw-bold text-muted me-3">In
+                        stock:</span>{{product.in_stock}}
+                </li>
+            </ul>
+            <a target="_blank" href="{% url 'product_detail' product.pk %}"
+                class="btn btn-outline-primary w-100 fw-bold"><i class="bi bi-info-circle-fill me-2"></i> More
+                information</a>
+        </div>
+    </div>
+</div>

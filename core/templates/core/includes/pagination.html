@@ -1,0 +1,25 @@
+<div class="py-3 row">
+    <div class="col-4 text-start">
+        {% if page_obj.has_previous %}
+        <div class="btn-group" role="group">
+            <a class="btn btn-outline-primary" href="?page=1">&laquo; First</a>
+            <a class="btn btn-outline-primary" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-4 text-center">
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+    </div>
+
+    <div class="col-4 text-end">
+        {% if page_obj.has_next %}
+        <div class="btn-group" role="group">
+            <a class="btn btn-outline-primary" href="?page={{ page_obj.next_page_number }}">Next</a>
+            <a class="btn btn-outline-primary" href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+        </div>
+        {% endif %}
+    </div>
+</div>

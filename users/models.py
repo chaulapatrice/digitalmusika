@@ -5,13 +5,11 @@ from django.contrib.auth.models import AbstractUser
 class User(AbstractUser):
     CUSTOMER = 'customer'
     PRODUCER = 'producer'
-    MIDDLEMAN = 'middleman'
     ADMIN = 'admin'
 
     TYPES = (
         (CUSTOMER, 'Customer'),
-        (PRODUCER, 'Producer'),
-        (MIDDLEMAN, 'Middleman')
+        (PRODUCER, 'Producer')
     )
 
     CITIES = (
@@ -65,9 +63,9 @@ class User(AbstractUser):
     city = models.CharField(max_length=255, choices=CITIES, null=True)
     province = models.CharField(max_length=255, choices=PROVINCES, null=True)
     lat = models.DecimalField(
-        max_digits=15, decimal_places=8, null=True, blank=True)
+        max_digits=30, decimal_places=20, null=True, blank=True)
     lng = models.DecimalField(
-        max_digits=15, decimal_places=8, null=True, blank=True)
+        max_digits=30, decimal_places=20, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

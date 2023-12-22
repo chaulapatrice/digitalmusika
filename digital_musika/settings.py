@@ -266,7 +266,7 @@ JAZZMIN_SETTINGS = {
     # Related Modal #
     #################
     # Use modals instead of popups
-    "related_modal_active": False,
+    "related_modal_active": True,
 
     #############
     # UI Tweaks #
@@ -289,22 +289,23 @@ JAZZMIN_SETTINGS = {
     "changeform_format": "horizontal_tabs",
     # override change forms on a per modeladmin basis
     "changeform_format_overrides": {"auth.user": "collapsible", "auth.group": "vertical_tabs"},
+    "show_ui_builder": True
 }
 
 JAZZMIN_UI_TWEAKS = {
     "navbar_small_text": False,
     "footer_small_text": False,
-    "body_small_text": False,
+    "body_small_text": True,
     "brand_small_text": False,
-    "brand_colour": "navbar-indigo",
-    "accent": "accent-indigo",
-    "navbar": "navbar-indigo navbar-dark",
+    "brand_colour": "navbar-success",
+    "accent": "accent-success",
+    "navbar": "navbar-success navbar-dark",
     "no_navbar_border": False,
     "navbar_fixed": False,
     "layout_boxed": False,
     "footer_fixed": False,
-    "sidebar_fixed": True,
-    "sidebar": "sidebar-dark-indigo",
+    "sidebar_fixed": False,
+    "sidebar": "sidebar-light-success",
     "sidebar_nav_small_text": False,
     "sidebar_disable_expand": False,
     "sidebar_nav_child_indent": False,
@@ -320,8 +321,7 @@ JAZZMIN_UI_TWEAKS = {
         "warning": "btn-warning",
         "danger": "btn-danger",
         "success": "btn-success"
-    },
-    "show_ui_builder": True
+    }
 }
 
 TWILIIO_ACCOUNT_SID = 'AC83c3e53c113e584b7dbfe6a65e947e0c'

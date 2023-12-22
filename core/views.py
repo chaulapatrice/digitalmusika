@@ -1,25 +1,33 @@
+from typing import Any
+from django.db.models.query import QuerySet
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.http.response import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import Order, Payment, Deal, Withdrawal, DealBid
+from .models import Order, Payment, Product, OrderItem
 from .utils import now
 from .forms import (
-    LoginForm, 
-    SignupForm, 
-    WithdrawalForm, 
-    AcceptDealForm, 
+    LoginForm,
+    SignupForm,
     SignoutForm,
-    DealFilterForm,
-    AddDealBidForm
+    PlaceOrderForm
 )
 from django.contrib.auth import authenticate, login, logout
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
 from users.models import User
 from django.core.exceptions import PermissionDenied
-from django.db.models import Q
+from django.views.generic.list import ListView
+from django.views.generic.detail import DetailView
+from django.db import transaction
+from .utils import get_paynow_client, notify_customer_complete_payment
+from django.conf import settings
+from django.urls import reverse
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import Group
+
+
 # Create your views here.
 
 
@@ -44,12 +52,6 @@ def paynow_webhook(request: HttpRequest, order_id=None):
             order.awaiting_delivery_at = status_changed_at
             order.save()
 
-            # Update deal
-            deal = Deal.objects.get(order__id=order.pk)
-            deal.status = Deal.COMPLETED
-            deal.completed_at = status_changed_at
-            deal.save()
-
         if status == Payment.PAID:
             # Update payment
             payment = Payment.objects.get(order__id=order.pk)
@@ -58,15 +60,9 @@ def paynow_webhook(request: HttpRequest, order_id=None):
             payment.save()
 
             # Update order
-            order.status = Order.AWAITING_DELIVERY
+            order.status = Order.READY_FOR_DELIVERY
             order.awaiting_delivery_at = status_changed_at
             order.save()
-
-            # Update deal
-            deal = Deal.objects.get(order__id=order.pk)
-            deal.status = Deal.COMPLETED
-            deal.completed_at = status_changed_at
-            deal.save()
 
     except Exception as e:
         print("Error::", e)
@@ -112,6 +108,7 @@ def user_login(request: HttpRequest) -> HttpResponse:
         'error': error
     })
 
+
 @login_required
 def user_logout(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
@@ -119,9 +116,11 @@ def user_logout(request: HttpRequest) -> HttpResponse:
         if form.is_valid():
             logout(request)
             return redirect('login')
-    # You are not supposed to signout any other way :)   
+    # You are not supposed to signout any other way :)
     raise PermissionDenied()
 
+
+@transaction.atomic
 def user_register(request: HttpRequest) -> HttpResponse:
     error = None
     form = SignupForm
@@ -133,7 +132,7 @@ def user_register(request: HttpRequest) -> HttpResponse:
         if form.is_valid():
             try:
                 cd = form.cleaned_data
-                user = User.objects.create_user(
+                user: User = User.objects.create_user(
                     first_name=cd.get('first_name'),
                     last_name=cd.get('last_name'),
                     username=cd.get('email'),
@@ -145,18 +144,27 @@ def user_register(request: HttpRequest) -> HttpResponse:
                     city=cd.get('city'),
                     province=cd.get('province'),
                     house_number=cd.get('house_number'),
-                    type=cd.get('role')
+                    type=cd.get('role'),
+                    lat=cd.get('lat'),
+                    lng=cd.get('lng')
                 )
-           
+
                 if user is not None:
-                    login(request, user)
+
                     next = request.GET.get('next', '/')
+                    if user.type == User.PRODUCER:
+                        group = Group.objects.get(name='Producer')
+                        user.groups.add(group)
+                        user.is_staff = True
+                        user.save()
+                        next = '/admin'
+                    login(request, user)
                     return redirect(next)
                 else:
                     error = 'Signup failed'
 
             except Exception as e:
-                error = 'Signup failed'
+                raise e
         else:
             error = 'Enter all required information'
 
@@ -166,143 +174,132 @@ def user_register(request: HttpRequest) -> HttpResponse:
     })
 
 
-
 @login_required
 def index(request: HttpRequest) -> HttpResponse:
-
-    deals = Deal.objects.filter(assignee=request.user)
-    withdrawals = Withdrawal.objects.filter(paid=False, user=request.user)
-    payout = sum([withdrawal.amount for withdrawal in withdrawals])
-
     return render(request, 'core/index.html', {
-        'deals': deals,
-        'payout': payout
     })
 
-@login_required
-def browse_deals(request: HttpRequest) -> HttpResponse:
-    deals = Deal.objects.filter(status=Deal.OPEN)
-    form = DealFilterForm(request.GET)
 
-    if form.data.get('search'):
-        deals = Deal.objects.filter(
-            Q(title__icontains=form.data.get('search')) | Q(description__icontains=form.data.get('search')))
-    
-    return render(request, 'core/deal_list.html', {
-        'deals': deals,
-        'form': form
-    })
+class ProductListView(ListView):
+    model = Product
+    paginate_by = 8
 
-@login_required
-def deal_bids(request: HttpRequest, pk=None) -> HttpResponse:
-    deal = get_object_or_404(Deal, pk=pk)
+    def get_queryset(self) -> QuerySet[Any]:
+        request = self.request
+        queryset = Product.objects.all().order_by('-created_at')
 
-    form = AddDealBidForm()
+        search = request.GET.get('search', None)
 
-    user = request.user
+        if search:
+            queryset = queryset.filter(name__icontains=search)
+
+        return queryset
 
 
-    if request.method == 'POST':
-        form = AddDealBidForm(request.POST)
+class ProductDetailView(DetailView):
+    model = Product
 
-        if form.is_valid():
-            DealBid.objects.create(
-                user=user,
-                deal=deal,
-                offer_description=form.cleaned_data.get('offer_description')
-            )
-    
-    bids = DealBid.objects.filter(deal=deal)
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
 
-    return render(request, 'core/deal_bids.html', {
-        'deal': deal,
-        'bids': bids,
-        'form': form,
-    })
+        product = self.get_object()
+
+        context['related_products'] = Product.objects.filter(
+            user=product.user).order_by('?')[:4]
+
+        return context
+
 
 @login_required
-def deal_view(request: HttpRequest, pk=None) -> HttpResponse:
-    deal = get_object_or_404(Deal, pk=pk)
+@transaction.atomic
+def place_order(request: HttpRequest, pk=None):
+    form = PlaceOrderForm()
 
-    return render(request, 'core/deal_view.html', {
-        'deal': deal
-    })
+    product: Product = get_object_or_404(Product, pk=pk)
+    customer: User = request.user
 
-@login_required
-def invite_customer_to_deal(request: HttpRequest, pk=None) -> HttpResponse:
-    deal = get_object_or_404(Deal, pk=pk)
-    form = AcceptDealForm()
-    customer = request.user
-    error = None
-    accepted_deal = deal.status == Deal.ACCEPTED
-    deal_taken_byother = False
-
-    if deal.status == Deal.ACCEPTED and deal.customer:
-        if deal.customer.pk != customer.pk:
-            deal_taken_byother = True
-        
-
-    if request.method == 'POST':
-        form = AcceptDealForm(request.POST)        
-        if form.is_valid():
-            try:
-                deal.status = Deal.ACCEPTED
-                deal.accepted_at = now()
-                deal.customer = customer
-                deal.save()
-                accepted_deal = True
-            except Exception as e:
-                error = 'Failed to accept deal'
-                raise e
-        
-           
-
-    return render(request, 'core/invite_customer_to_deal.html', {
-        'form': form,
-        'customer': customer,
-        'deal': deal,
-        'error': error,
-        'accepted_deal': accepted_deal,
-        'deal_taken_byother': deal_taken_byother
-    })
-
-@login_required
-def withdraw(request: HttpRequest) -> HttpResponse:
-    form = WithdrawalForm()
-    user: User = request.user
-    error = None
     message = None
-    remaining_balance = user.balance
-    withdrawal = None
-    withdrawals = Withdrawal.objects.filter(user=user)
+    error = None
+
     if request.method == 'POST':
-        form = WithdrawalForm(request.POST, request.FILES)
+        form = PlaceOrderForm(request.POST)
 
         if form.is_valid():
-            amount = form.cleaned_data.get('amount')
-            innbucks_qrcode = form.cleaned_data.get('innbucks_qrcode')
-            if amount >= 10.00:
-                if amount > (user.balance):
-                    error = 'Insufficient balance'
-                else:
-                    withdrawal = Withdrawal.objects.create(
-                        user=user,
-                        amount=amount,
-                        innbucks_qrcode=innbucks_qrcode
-                    )
-                    remaining_balance = user.balance  - amount
-                    user.balance = remaining_balance
-                    user.save()
-            else:
-                error = 'You can only withdraw $10 and above'
-    
-    return render(request, 'core/withdraw.html', {
-        'error': error,
-        'message': message,
-        'remaining_balance': remaining_balance,
-        'withdrawal': withdrawal,
+            data = form.cleaned_data
+            order_title = 'Order for ' + customer.first_name + " " + customer.last_name
+            order = Order.objects.create(
+                customer=customer,
+                status=Order.PENDING,
+                pending_at=now(),
+                title=order_title,
+                description=data.get('description'),
+                producer=request.user
+            )
+
+            order_item = OrderItem.objects.create(
+                product=product,
+                quantity=data.get('quantity'),
+                order=order
+            )
+
+            return_url = settings.SITE_BASE_URL_NGROK + \
+                reverse('order_detail', kwargs={'pk': order.pk})
+            result_url = settings.SITE_BASE_URL_NGROK + \
+                reverse('paynow_webhook', kwargs={'order_id': order.pk})
+
+            paynow = get_paynow_client(
+                return_url, result_url)
+            order_number = order.pk
+            email = 'chaulapatrice@gmail.com' if settings.DEBUG else order.customer.email
+
+            payment = paynow.create_payment(
+                f'Order #{order_number}', email)
+
+            # Add item to payment
+            payment.add(
+                order_item.product.name,
+                order_item.total()
+            )
+
+            response = paynow.send(payment)
+
+            if response.success:
+                # Insert payment into the database
+                payment = Payment.objects.create(
+                    status=Payment.CREATED,
+                    order=order,
+                    amount=order.total(),
+                    internal_created_at=now(),
+                    customer=order.customer,
+                    paynow_redirect_url=response.redirect_url,
+                    paynow_poll_url=response.poll_url
+                )
+
+                # 3. Notify customer to complete payment
+                notify_customer_complete_payment(payment.customer, payment)
+
+                return redirect(payment.paynow_redirect_url)
+
+            message = 'Order created please complete payment here to fulfill the order'
+
+    return render(request, 'core/place_order.html', {
         'form': form,
-        'withdrawals': withdrawals
+        'product': product,
+        'error': error,
+        'message': message
     })
 
 
+class OrderDetailView(LoginRequiredMixin, DetailView):
+    model = Order
+
+
+class OrderListView(ListView):
+    model = Order
+    paginate_by = 15
+
+    def get_queryset(self) -> QuerySet[Any]:
+        queryset = Order.objects.all().order_by('-created_at')
+        queryset = queryset.filter(customer=self.request.user)
+
+        return queryset
