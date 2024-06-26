@@ -65,7 +65,6 @@ def paynow_webhook(request: HttpRequest, order_id=None):
             order.save()
 
     except Exception as e:
-        print("Error::", e)
         response = JsonResponse({
             'error': 'Failed to process event'
         })
@@ -204,6 +203,7 @@ class ProductDetailView(DetailView):
 
         product = self.get_object()
 
+        context['first_image'] = product.image_list.first()
         context['related_products'] = Product.objects.filter(
             user=product.user).order_by('?')[:4]
 

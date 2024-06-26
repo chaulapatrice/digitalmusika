@@ -319,10 +319,9 @@
                        console.log("HEIGHT::", event.detail.height);
                        $('#id_height').val(event.detail.height);
    
-                       console.log(event.detail.rotate);
-                       console.log(event.detail.scaleX);
-                       console.log(event.detail.scaleY);
-                   }
+                       console.log("Event detail::::", event.detail)
+                   },
+                   
                });
 
                cropper = image[0].cropper
