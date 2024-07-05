@@ -24,8 +24,8 @@ SECRET_KEY = 'django-insecure-e!=#n*zvr+x%n16_x%jd-pbksdq)=_vpojeytoh-c5_wav7lq^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
-CSRF_TRUSTED_ORIGINS = ['https://2891-169-0-20-210.ngrok-free.app']
+ALLOWED_HOSTS = ["digitalmusika.creativewebtech.co.za"]
+CSRF_TRUSTED_ORIGINS = ['https://digitalmusika.creativewebtech.co.za']
 
 
 # Application definition
@@ -335,10 +335,10 @@ JAZZMIN_UI_TWEAKS = {
     }
 }
 
-TWILIIO_ACCOUNT_SID = 'AC83c3e53c113e584b7dbfe6a65e947e0c'
+TWILIO_ACCOUNT_SID = 'AC83c3e53c113e584b7dbfe6a65e947e0c'
 TWILIO_AUTH_TOKEN = '4b116313eb8d91bfce44ab4aaa03066c'
-SITE_BASE_URL = 'https://2891-169-0-20-210.ngrok-free.app'
-SITE_BASE_URL_NGROK = 'https://2891-169-0-20-210.ngrok-free.app'
+SITE_BASE_URL = 'https://digitalmusika.creativewebtech.co.za'
+SITE_BASE_URL_NGROK = 'https://digitalmusika.creativewebtech.co.za'
 
 # Payments
 PAYNOW_INTEGRATION_ID = '11927'
