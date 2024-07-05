@@ -163,7 +163,7 @@ def user_register(request: HttpRequest) -> HttpResponse:
                     error = 'Signup failed'
 
             except Exception as e:
-                raise e
+                error = "Sign up failed"
         else:
             error = 'Enter all required information'
 
@@ -202,10 +202,10 @@ class ProductDetailView(DetailView):
         context = super().get_context_data(**kwargs)
 
         product = self.get_object()
-
+        object = self.get_object()
         context['first_image'] = product.image_list.first()
         context['related_products'] = Product.objects.filter(
-            user=product.user).order_by('?')[:4]
+            user=product.user).exclude(pk=object.pk).order_by('?')[:4]
 
         return context
 

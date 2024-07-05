@@ -24,8 +24,8 @@ SECRET_KEY = 'django-insecure-e!=#n*zvr+x%n16_x%jd-pbksdq)=_vpojeytoh-c5_wav7lq^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', 'digitalmusika.com']
-CSRF_TRUSTED_ORIGINS = ['https://digitalmusika.com']
+ALLOWED_HOSTS = ["*"]
+CSRF_TRUSTED_ORIGINS = ['https://2891-169-0-20-210.ngrok-free.app']
 
 
 # Application definition
@@ -109,6 +109,17 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+    {
+        'NAME': 'django_password_validators.password_character_requirements.password_validation.PasswordCharacterValidator',
+        'OPTIONS': {
+            'min_length_digit': 1,
+            'min_length_alpha': 2,
+            'min_length_special': 3,
+            'min_length_lower': 4,
+            'min_length_upper': 5,
+            'special_characters': "~!@#$%^&*()_+{}\":;'[]"
+        }
     },
 ]
 
@@ -326,8 +337,8 @@ JAZZMIN_UI_TWEAKS = {
 
 TWILIIO_ACCOUNT_SID = 'AC83c3e53c113e584b7dbfe6a65e947e0c'
 TWILIO_AUTH_TOKEN = '4b116313eb8d91bfce44ab4aaa03066c'
-SITE_BASE_URL = 'https://digitalmusika.com'
-SITE_BASE_URL_NGROK = 'https://digitalmusika.com'
+SITE_BASE_URL = 'https://2891-169-0-20-210.ngrok-free.app'
+SITE_BASE_URL_NGROK = 'https://2891-169-0-20-210.ngrok-free.app'
 
 # Payments
 PAYNOW_INTEGRATION_ID = '11927'

@@ -54,11 +54,13 @@
                         </a>
                     </li>
 
+                    {% if user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link active fw-bold text-muted" aria-current="page" href="{% url 'order_list' %}">
                             Orders
                         </a>
                     </li>
+                    {% endif %}
 
                 </ul>
 

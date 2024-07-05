@@ -56,7 +56,7 @@
     </div>
     <div class="col-md-12 mt-3">
         <script>
-            var map = L.map('map').setView([{{ product.user.lat }}, { { product.user.lng } }], 13);
+            var map = L.map('map').setView([{{ product.user.lat }}, {{ product.user.lng }}], 13);
             L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '<a target="_blank" class="btn btn-sm btn-success text-white ms-2 my-2 fw-bold" href="http://google.com/maps?q={{ product.user.lat }},{{ product.user.lng}}">View on Google Maps</a>'
