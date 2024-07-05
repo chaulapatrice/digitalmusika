@@ -95,6 +95,17 @@ class SignupForm(forms.Form):
             Submit('submit', 'Register', css_class='w-100')
         )
 
+    def validate_password(value):
+        import re
+        if not bool(re.match("^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"), value):
+            raise forms.ValidationError("Invalid password")
+        return value
+
+    def validate_email(value):
+        if User.objects.filter(username=value).exists():
+            raise forms.ValidationError('Email is already registered')
+        return value
+
 
 class AcceptDealForm(forms.Form):
     confirm = forms.BooleanField(required=True)

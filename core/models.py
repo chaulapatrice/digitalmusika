@@ -7,7 +7,6 @@ from .utils import (
     notify_customer_complete_payment,
     notify_agent_deal_completed,
     notify_customer_order_ready,
-    get_paynow_client,
     now)
 from django.urls import reverse
 from django.conf import settings
