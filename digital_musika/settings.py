@@ -335,7 +335,7 @@ JAZZMIN_UI_TWEAKS = {
     }
 }
 
-TWILIO_ACCOUNT_SID = 'AC83c3e53c113e584b7dbfe6a65e947e0c'
+TWILIIO_ACCOUNT_SID = 'AC83c3e53c113e584b7dbfe6a65e947e0c'
 TWILIO_AUTH_TOKEN = '4b116313eb8d91bfce44ab4aaa03066c'
 SITE_BASE_URL = 'https://digitalmusika.creativewebtech.co.za'
 SITE_BASE_URL_NGROK = 'https://digitalmusika.creativewebtech.co.za'
