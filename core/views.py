@@ -32,8 +32,8 @@ from django.contrib import messages
 
 
 @csrf_exempt
-def paynow_webhook(request: HttpRequest, order_id=None):
-    payment: Payment = get_object_or_404(Payment, pk=order_id)
+def paynow_webhook(request: HttpRequest, pk=None):
+    payment: Payment = get_object_or_404(Payment, pk=pk)
     status = request.POST.get('status', None)
     print("Current status:: ", status)
 
@@ -300,7 +300,6 @@ def checkout(request: HttpRequest) -> HttpResponse:
     total_payment = 0
     order_ids = []
     orders = []
-    print("This executed::::::::::::::::::::::::::::::::::::::::::::::::::")
     if form.is_valid():
         cart = Cart.objects.get(user=request.user)
         items = cart.cartitem_set.all()
@@ -328,6 +327,7 @@ def checkout(request: HttpRequest) -> HttpResponse:
 
             total_payment += order_item.total()
 
+        CartItem.objects.filter(cart=cart).delete()
         db_payment = Payment.objects.create(
             status=Payment.CREATED,
             amount=order.total(),
