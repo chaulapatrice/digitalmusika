@@ -4,21 +4,27 @@ from .views import (
     user_login,
     user_register,
     user_logout,
-    place_order,
     ProductListView,
     ProductDetailView,
     OrderDetailView,
-    OrderListView
+    OrderListView,
+    add_to_cart,
+    update_cart,
+    cart,
+checkout
 )
 
 urlpatterns = [
-    path('webhook/<int:order_id>', paynow_webhook, name='paynow_webhook'),
+    path('webhook/<int:pk>', paynow_webhook, name='paynow_webhook'),
     path('login', user_login, name='login'),
     path('logout', user_logout, name='logout'),
     path('register', user_register, name='register'),
     path('', ProductListView.as_view(), name='product_list'),
     path('products/<int:pk>', ProductDetailView.as_view(), name='product_detail'),
-    path('products/<int:pk>/order', place_order, name='place_order'),
     path('orders', OrderListView.as_view(), name='order_list'),
     path('orders/<int:pk>', OrderDetailView.as_view(), name='order_detail'),
+    path('add-to-cart', add_to_cart, name='add_to_cart'),
+    path('update-cart', update_cart, name='update_cart'),
+    path('cart', cart, name='cart'),
+    path('checkout', checkout, name='checkout'),
 ]

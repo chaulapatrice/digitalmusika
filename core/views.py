@@ -5,16 +5,15 @@ from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.http.response import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import Order, Payment, Product, OrderItem
+from .models import Order, Payment, Product, OrderItem, Cart, CartItem
 from .utils import now
 from .forms import (
     LoginForm,
     SignupForm,
     SignoutForm,
-    PlaceOrderForm
+    PlaceOrderForm, AddToCartForm, CheckoutForm
 )
 from django.contrib.auth import authenticate, login, logout
-from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
 from users.models import User
 from django.core.exceptions import PermissionDenied
@@ -26,6 +25,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
+from django.contrib import messages
 
 
 # Create your views here.
@@ -33,36 +33,36 @@ from django.contrib.auth.models import Group
 
 @csrf_exempt
 def paynow_webhook(request: HttpRequest, order_id=None):
-    order: Order = get_object_or_404(Order, pk=order_id)
+    payment: Payment = get_object_or_404(Payment, pk=order_id)
     status = request.POST.get('status', None)
     print("Current status:: ", status)
 
     status_changed_at = now()
+
     try:
         if status == Payment.AWAITING_DELIVERY:
-
-            # Update payment
-            payment = Payment.objects.get(order__id=order.pk)
+            # Update orders
             payment.status = Payment.AWAITING_DELIVERY
             payment.awaiting_delivery_at = status_changed_at
             payment.save()
 
-            # Update order
-            order.status = Order.AWAITING_DELIVERY
-            order.awaiting_delivery_at = status_changed_at
-            order.save()
+            # Update orders
+            for order in payment.orders.all():
+                order.status = Order.AWAITING_DELIVERY
+                order.awaiting_delivery_at = status_changed_at
+                order.save()
 
         if status == Payment.PAID:
             # Update payment
-            payment = Payment.objects.get(order__id=order.pk)
             payment.status = Payment.PAID
             payment.paid_at = status_changed_at
             payment.save()
 
-            # Update order
-            order.status = Order.READY_FOR_DELIVERY
-            order.awaiting_delivery_at = status_changed_at
-            order.save()
+            # Update orders
+            for order in payment.orders.all():
+                order.status = Order.READY_FOR_DELIVERY
+                order.awaiting_delivery_at = status_changed_at
+                order.save()
 
     except Exception as e:
         response = JsonResponse({
@@ -207,87 +207,162 @@ class ProductDetailView(DetailView):
         context['related_products'] = Product.objects.filter(
             user=product.user).exclude(pk=object.pk).order_by('?')[:4]
 
+        try:
+            cart_item = CartItem.objects.get(product=product)
+        except CartItem.DoesNotExist:
+            cart_item = None
+
+        cart_form = AddToCartForm(initial={
+            'product': product,
+            'quantity': cart_item.quantity if cart_item else 1,
+        })
+
+        context['cart_form'] = cart_form
+
         return context
 
 
 @login_required
 @transaction.atomic
-def place_order(request: HttpRequest, pk=None):
-    form = PlaceOrderForm()
+def add_to_cart(request: HttpRequest) -> HttpResponse:
+    form = AddToCartForm(request.POST)
 
-    product: Product = get_object_or_404(Product, pk=pk)
-    customer: User = request.user
+    if form.is_valid():
+        cart, cart_created = Cart.objects.get_or_create(user=request.user)
 
-    message = None
-    error = None
+        product = form.cleaned_data['product']
+        quantity = form.cleaned_data['quantity']
 
-    if request.method == 'POST':
-        form = PlaceOrderForm(request.POST)
+        if product.in_stock < quantity:
+            messages.add_message(request, messages.ERROR, 'Not enough stock')
+            return redirect(product)
 
-        if form.is_valid():
-            data = form.cleaned_data
+        # create item
+        try:
+            cart_item = CartItem.objects.get(cart=cart, product=product)
+            cart_item.quantity = quantity
+            cart_item.save()
+        except CartItem.DoesNotExist:
+            cart_item = CartItem.objects.create(cart=cart, product=product, quantity=quantity)
+
+        messages.add_message(request, messages.SUCCESS, 'Product added to cart')
+        return redirect(cart_item.product)
+
+
+@login_required
+@transaction.atomic
+def update_cart(request: HttpRequest) -> HttpResponse:
+    form = AddToCartForm(request.POST)
+
+    if form.is_valid():
+        cart, cart_created = Cart.objects.get_or_create(user=request.user)
+
+        product = form.cleaned_data['product']
+        quantity = form.cleaned_data['quantity']
+
+        if product.in_stock < quantity:
+            messages.add_message(request, messages.ERROR, 'Not enough stock')
+            return redirect('cart')
+
+        # create item
+        try:
+            cart_item = CartItem.objects.get(cart=cart, product=product)
+            cart_item.quantity = quantity
+            cart_item.save()
+        except CartItem.DoesNotExist:
+            CartItem.objects.create(cart=cart, product=product, quantity=quantity)
+
+        messages.add_message(request, messages.SUCCESS, 'Cart updated')
+        return redirect('cart')
+
+
+@login_required
+def cart(request: HttpRequest) -> HttpResponse:
+    cart = Cart.objects.get(user=request.user)
+    items = cart.cartitem_set.all()
+    for item in items:
+        item.form = AddToCartForm(initial={
+            'quantity': item.quantity,
+            'product': item.product
+        })
+
+    checkout_form = CheckoutForm(initial={
+        'checkout': 1
+    })
+    return render(request, 'core/cart.html', {'cart': cart, 'items': items, 'checkout_form': checkout_form})
+
+
+@login_required
+@transaction.atomic
+def checkout(request: HttpRequest) -> HttpResponse:
+    form = CheckoutForm(request.POST)
+
+    total_payment = 0
+    order_ids = []
+    orders = []
+    print("This executed::::::::::::::::::::::::::::::::::::::::::::::::::")
+    if form.is_valid():
+        cart = Cart.objects.get(user=request.user)
+        items = cart.cartitem_set.all()
+        for item in items:
+            customer: User = request.user
             order_title = 'Order for ' + customer.first_name + " " + customer.last_name
             order = Order.objects.create(
                 customer=customer,
                 status=Order.PENDING,
                 pending_at=now(),
                 title=order_title,
-                description=data.get('description'),
-                producer=request.user
+                description=item.product.name,
+                producer=item.product.user
             )
 
+            orders.append(order)
+
+            order_ids.append(str(order.pk))
+
             order_item = OrderItem.objects.create(
-                product=product,
-                quantity=data.get('quantity'),
+                product=item.product,
+                quantity=item.quantity,
                 order=order
             )
 
-            return_url = settings.SITE_BASE_URL_NGROK + \
-                reverse('order_detail', kwargs={'pk': order.pk})
-            result_url = settings.SITE_BASE_URL_NGROK + \
-                reverse('paynow_webhook', kwargs={'order_id': order.pk})
+            total_payment += order_item.total()
 
-            paynow = get_paynow_client(
-                return_url, result_url)
-            order_number = order.pk
-            email = 'chaulapatrice@gmail.com' if settings.DEBUG else order.customer.email
+        db_payment = Payment.objects.create(
+            status=Payment.CREATED,
+            amount=order.total(),
+            internal_created_at=now(),
+            customer=order.customer
+        )
 
-            payment = paynow.create_payment(
-                f'Order #{order_number}', email)
+        for order in orders:
+            db_payment.orders.add(order)
 
-            # Add item to payment
-            payment.add(
-                order_item.product.name,
-                order_item.total()
-            )
+        return_url = settings.SITE_BASE_URL_NGROK + reverse('order_list')
+        result_url = settings.SITE_BASE_URL_NGROK + reverse('paynow_webhook', kwargs={'pk': db_payment.pk})
 
-            response = paynow.send(payment)
+        paynow = get_paynow_client(return_url, result_url)
+        email = 'chaulapatrice@gmail.com'
 
-            if response.success:
-                # Insert payment into the database
-                payment = Payment.objects.create(
-                    status=Payment.CREATED,
-                    order=order,
-                    amount=order.total(),
-                    internal_created_at=now(),
-                    customer=order.customer,
-                    paynow_redirect_url=response.redirect_url,
-                    paynow_poll_url=response.poll_url
-                )
+        reference = f'Order #{",".join(order_ids)}'
+        payment = paynow.create_payment(reference, email)
 
-                # 3. Notify customer to complete payment
-                notify_customer_complete_payment(payment.customer, payment)
+        # Add item to payment
+        payment.add(
+            reference,
+            order_item.total()
+        )
 
-                return redirect(payment.paynow_redirect_url)
+        response = paynow.send(payment)
 
-            message = 'Order created please complete payment here to fulfill the order'
-
-    return render(request, 'core/place_order.html', {
-        'form': form,
-        'product': product,
-        'error': error,
-        'message': message
-    })
+        if response.success:
+            # update payment
+            db_payment.paynow_redirect_url = response.redirect_url
+            db_payment.paynow_poll_url = response.poll_url
+            db_payment.save()
+            # 3. Notify customer to complete payment
+            notify_customer_complete_payment(db_payment.customer, db_payment)
+            return redirect(db_payment.paynow_redirect_url)
 
 
 class OrderDetailView(LoginRequiredMixin, DetailView):

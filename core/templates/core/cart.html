@@ -1,0 +1,39 @@
+{% extends "./base.html" %}
+{% load crispy_forms_tags %}
+{% block body %}
+    <h3 class="pb-3">Checkout</h3>
+    <div class="row">
+        <div class="col-md-9">
+            {% for item in items %}
+                <div class="row bg-white p-2 mb-1 border rounded">
+                    <div class="col-md-2">
+                        <img class="mr-3 img-fluid" src="{{ item.product.image.url }}"
+                             alt="{{ item.product.name }}">
+                    </div>
+                    <div class="col-md-10">
+                        <h5 class="mt-0">{{ item.product.name }} x {{ item.quantity }} - ${{ item.total }}</h5>
+                        <form method="POST" action="{% url 'update_cart' %}">
+                            {% csrf_token %}
+                            {% crispy item.form %}
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="col-md-3">
+            <div class="border rounded bg-white p-2">
+                <h4 class="mb-2">Total: ${{ cart.total }}</h4>
+                <div class="alert alert-warning" role="alert">
+                    <p>You will be redirected to paynow to complete the payment</p>
+                </div>
+                <form method="POST" action="{% url 'checkout' %}">
+                    {% csrf_token %}
+                    {{ checkout_form }}
+                    <button type="submit" class="btn btn-success btn-lg w-100"><i class="bi bi-credit-card"></i>
+                        Checkout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

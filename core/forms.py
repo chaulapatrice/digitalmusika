@@ -1,5 +1,7 @@
 from django import forms
 from image_uploader_widget.widgets import ImageUploaderWidget
+
+from core.models import Product
 from users.models import User
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column
@@ -121,5 +123,27 @@ class SignoutForm(forms.Form):
 
 
 class PlaceOrderForm(forms.Form):
-    quantity = forms.IntegerField(min_value=50, required=True)
+    quantity = forms.IntegerField(min_value=1, required=True)
     description = forms.CharField(widget=forms.Textarea())
+
+
+class AddToCartForm(forms.Form):
+    quantity = forms.IntegerField(min_value=1, required=True)
+    product = forms.ModelChoiceField(queryset=Product.objects.all(), widget=forms.HiddenInput())
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+
+        self.helper.layout = Layout(
+            Row(
+                Column('quantity', css_class='form-group col-md-12 mb-0'),
+                Column('product', css_class='form-group col-md-12 mb-0'),
+            ),
+            Submit('submit', 'Add To Cart', css_class='mb-0')
+        )
+
+
+class CheckoutForm(forms.Form):
+    checkout = forms.IntegerField(required=True, widget=forms.HiddenInput())

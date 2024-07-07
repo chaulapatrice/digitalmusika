@@ -19,7 +19,6 @@ def get_paynow_client(return_url: str, result_url: str) -> Paynow:
 
 
 def send_text_message(phone_number: str, message: str) -> bool:
-
     if settings.DEBUG:
         phone_number_to = '+27768552976'
     else:
@@ -94,14 +93,16 @@ def notify_customer_complete_payment(customer, payment):
     payment_link = payment.paynow_redirect_url
     first_name = customer.first_name
     phone_number = customer.phone
-    order_number = payment.order.pk
 
-    send_text_message(
-        phone_number,
-        f'Dear {first_name}, order #{order_number} has been created for you on your request. \n'
-        f'To fulfill the order please complete payment using the link provided\n\n'
-        f'{payment_link}'
-    )
+    for order in payment.orders.all():
+        order_number = order.pk
+
+        send_text_message(
+            phone_number,
+            f'Dear {first_name}, order #{order_number} has been created for you on your request. \n'
+            f'To fulfill the order please complete payment using the link provided\n\n'
+            f'{payment_link}'
+        )
 
 
 def notify_customer_order_ready(order):

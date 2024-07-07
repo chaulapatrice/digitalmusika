@@ -9,9 +9,9 @@ from .utils import (
     notify_customer_order_ready,
     now)
 from django.urls import reverse
+from django.shortcuts import redirect
 from django.conf import settings
 from django.contrib import messages
-# Create your models here.
 
 
 class Payment(models.Model):
@@ -33,8 +33,8 @@ class Payment(models.Model):
         (DISPUTED, DISPUTED),
         (REFUNDED, REFUNDED)
     )
-    paynow_redirect_url = models.CharField(max_length=255)
-    paynow_poll_url = models.CharField(max_length=255)
+    paynow_redirect_url = models.CharField(max_length=255, null=True, blank=True)
+    paynow_poll_url = models.CharField(max_length=255, null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=45, choices=STATUSES)
     delivered_at = models.DateTimeField(null=True, blank=True)
@@ -48,11 +48,9 @@ class Payment(models.Model):
 
     internal_created_at = models.DateTimeField(auto_now_add=True)
     internal_updated_at = models.DateTimeField(auto_now=True)
-
+    orders = models.ManyToManyField('Order', related_name='payments', blank=True)
     customer = models.ForeignKey(
         'users.User', on_delete=models.CASCADE, related_name='customer_payments')
-    order = models.ForeignKey(
-        'Order', on_delete=models.CASCADE, related_name='order_payments')
 
     def __str__(self):
         return str(self.customer) + " Payment - #" + str(self.pk)
@@ -117,7 +115,7 @@ class Order(models.Model):
 
 
 @receiver(post_save, sender=Order)
-def post_save_order(sender, instance: Order, created,  **kwargs):
+def post_save_order(sender, instance: Order, created, **kwargs):
     if instance.status == Order.AWAITING_DELIVERY:
         notify_customer_order_ready(instance)
 
@@ -152,8 +150,11 @@ class Product(models.Model):
         'users.User', on_delete=models.CASCADE, related_name='products')
 
     def __str__(self) -> str:
-        return self.name + " ( #" + str(self.pk) + " ) -- $"\
+        return self.name + " ( #" + str(self.pk) + " ) -- $" \
             + str(self.price)
+
+    def get_absolute_url(self):
+        return reverse('product_detail', kwargs={'pk': self.pk})
 
 
 class ProductImage(models.Model):
@@ -189,3 +190,26 @@ class Withdrawal(models.Model):
 
     def __str__(self) -> str:
         return str(self.user) + ' - #' + str(self.pk) + ' - $' + str(self.amount)
+
+
+class Cart(models.Model):
+    user = models.OneToOneField('users.User', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def total(self):
+        return sum([item.quantity * float(item.product.price) for item in self.cartitem_set.all()])
+
+    def count(self):
+        return sum([item.quantity for item in self.cartitem_set.all()])
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey('Cart', on_delete=models.CASCADE)
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def total(self):
+        return self.quantity * float(self.product.price)

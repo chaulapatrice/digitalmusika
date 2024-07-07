@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 from pathlib import Path
 import os
+from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,9 +25,8 @@ SECRET_KEY = 'django-insecure-e!=#n*zvr+x%n16_x%jd-pbksdq)=_vpojeytoh-c5_wav7lq^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["digitalmusika.creativewebtech.co.za"]
+ALLOWED_HOSTS = ["digitalmusika.creativewebtech.co.za", 'localhost']
 CSRF_TRUSTED_ORIGINS = ['https://digitalmusika.creativewebtech.co.za']
-
 
 # Application definition
 
@@ -71,13 +71,13 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.cart_context_processor'
             ],
         },
     },
 ]
 
 WSGI_APPLICATION = 'digital_musika.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
@@ -92,7 +92,6 @@ DATABASES = {
         'PORT': 5432,
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -111,7 +110,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     }
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
@@ -136,12 +134,10 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
-
 
 # Media files, images and videos
 
@@ -201,8 +197,8 @@ JAZZMIN_SETTINGS = {
     "topmenu_links": [
 
         # Url that gets reversed (Permissions can be added)
-        {"name": "Home",  "url": "admin:index",
-            "permissions": ["auth.view_user"]},
+        {"name": "Home", "url": "admin:index",
+         "permissions": ["auth.view_user"]},
 
         # external url that opens in a new window (Permissions can be added)
 
@@ -340,3 +336,10 @@ LOGIN_URL = '/login'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+MESSAGE_TAGS = {
+    messages.ERROR: 'danger',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.INFO: 'info',
+}

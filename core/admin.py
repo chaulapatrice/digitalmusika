@@ -13,6 +13,8 @@ from .models import (
     ProductRequest,
     ProductImage
 )
+
+
 # Register your models here.
 
 
@@ -20,7 +22,6 @@ from .models import (
 class PaymentModelAdmin(admin.ModelAdmin):
     list_display = (
         'id',
-        'order',
         'customer',
         'amount',
         'status'
@@ -39,8 +40,7 @@ class PaymentModelAdmin(admin.ModelAdmin):
         'cancelled_at',
         'disputed_at',
         'refunded_at',
-        'customer',
-        'order'
+        'customer'
     )
 
 
